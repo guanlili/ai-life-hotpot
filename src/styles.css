@@ -141,5 +141,41 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family: "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", system-ui, sans-serif;
+  }
+
+  h1, h2, h3, .font-serif-sc {
+    font-family: "Noto Serif SC", "Songti SC", "STSong", serif;
+  }
+}
+
+@layer utilities {
+  .bg-noise {
+    background-image:
+      radial-gradient(circle at 20% 10%, oklch(0.35 0.08 50 / 0.4), transparent 50%),
+      radial-gradient(circle at 80% 90%, oklch(0.45 0.18 30 / 0.35), transparent 55%),
+      radial-gradient(circle at 50% 50%, oklch(0.25 0.04 40), oklch(0.18 0.03 40));
+  }
+  .text-glow-gold {
+    text-shadow: 0 0 18px oklch(0.78 0.14 80 / 0.6), 0 1px 0 oklch(0.2 0.04 40);
+  }
+  @keyframes hp-bubble {
+    0% { transform: translateY(0) scale(0.6); opacity: 0; }
+    30% { opacity: 0.9; }
+    100% { transform: translateY(-90px) scale(1.2); opacity: 0; }
+  }
+  @keyframes hp-steam {
+    0% { transform: translateY(0) scaleX(1); opacity: 0; }
+    25% { opacity: 0.7; }
+    100% { transform: translateY(-160px) scaleX(1.6); opacity: 0; }
+  }
+  @keyframes hp-drop {
+    0% { transform: translateY(-180px) rotate(0deg); opacity: 0; }
+    20% { opacity: 1; }
+    100% { transform: translateY(0) rotate(40deg); opacity: 1; }
+  }
+  @keyframes hp-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 oklch(0.78 0.14 80 / 0.5); }
+    50% { box-shadow: 0 0 0 14px oklch(0.78 0.14 80 / 0); }
   }
 }

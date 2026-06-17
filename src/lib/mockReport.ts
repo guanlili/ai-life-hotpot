@@ -85,10 +85,10 @@ export function buildReport(summary: SelectionSummary): LifeReport {
     baseText +
     `荤里你挑了${meats.map((m) => m.name).join("、") || "几样顺手的"},` +
     `素里配上${vegs.map((v) => v.name).join("、") || "一点清淡"},` +
-    `蘸料偏${conds.map((s) => s.style).join("、") || "清淡"},是个${styleWord}的人。` +
+    `蘸料偏${conds.map((s) => s.style).join("、") || "清淡"},做事带着${styleWord}的手感。` +
     `若把人生折成一百枚金币,你会把最多的押在「${DIM_LABEL[t1]}」上,` +
-    `其次留给「${DIM_LABEL[t2]}」——${DIMLINE[t1]}` +
-    `这一锅,火候正好。你以为只是配了顿火锅,其实早已熬出了自己的人生味道。`;
+    `其次留给「${DIM_LABEL[t2]}」。${DIMLINE[t1]}` +
+    `这一锅火候正好,像一份被你亲手熬出来的人生味道。`;
 
   return {
     flavor,

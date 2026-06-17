@@ -203,10 +203,10 @@ export function FoodGlyph({ name }: { name: string }) {
 }
 
 // 太极鸳鸯锅:阴阳鱼各填一种锅底颜色(left=左鱼/head在上,right=右鱼/head在下),
-// 含鱼眼、S 形分界、金色锅沿、把手。不传颜色则默认辣红 / 奶白。
+// 含鱼眼、S 形分界、金色锅沿、把手。不传颜色时保持未选择前的清水锅。
 export function YuanyangPot({ left, right }: { left?: string; right?: string }) {
-  const a = left ?? "#b4382b"; // 左鱼(默认辣红)
-  const b = right ?? "#e9d9b2"; // 右鱼(默认奶白)
+  const a = left ?? "#dbe9e3";
+  const b = right ?? "#eef4e8";
   return (
     <svg viewBox="0 0 200 200" style={svgStyle}>
       <defs>

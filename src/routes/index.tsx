@@ -18,10 +18,12 @@ export const Route = createFileRoute("/")({
 const serif = "'Noto Serif SC',serif";
 
 const cta: CSSProperties = {
-  display: "inline-block",
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 14,
   border: "none",
   cursor: "pointer",
-  padding: "16px 56px",
+  padding: "16px 54px",
   borderRadius: 6,
   background: "#b4382b",
   color: "#f4eddd",
@@ -29,30 +31,64 @@ const cta: CSSProperties = {
   fontWeight: 700,
   fontSize: 22,
   letterSpacing: ".2em",
-  boxShadow: "0 10px 24px rgba(150,40,30,.4)",
+  boxShadow: "0 12px 28px rgba(150,40,30,.4)",
   textDecoration: "none",
 };
 
-function Steam() {
+// 朱红印章
+function Seal({ text, style }: { text: string; style?: CSSProperties }) {
   return (
     <div
       style={{
-        position: "absolute",
-        left: "50%",
-        top: -28,
-        transform: "translateX(-50%)",
-        display: "flex",
-        gap: 12,
-        pointerEvents: "none",
+        width: 64,
+        height: 64,
+        borderRadius: 8,
+        background: "#b4382b",
+        color: "#f7ece2",
+        fontFamily: serif,
+        fontWeight: 900,
+        fontSize: 21,
+        lineHeight: 1.05,
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        placeItems: "center",
+        boxShadow: "0 4px 10px rgba(150,40,30,.35), inset 0 0 0 2px rgba(247,236,226,.35)",
+        transform: "rotate(-6deg)",
+        ...style,
       }}
     >
+      <span>{text[0]}</span>
+      <span>{text[1]}</span>
+      <span>{text[2]}</span>
+      <span>{text[3]}</span>
+    </div>
+  );
+}
+
+// 四角内框装饰
+function CornerMarks() {
+  const base: CSSProperties = { position: "absolute", width: 30, height: 30, pointerEvents: "none" };
+  const c = "rgba(154,107,58,.45)";
+  return (
+    <>
+      <div style={{ ...base, top: 30, left: 30, borderTop: `2px solid ${c}`, borderLeft: `2px solid ${c}` }} />
+      <div style={{ ...base, top: 30, right: 30, borderTop: `2px solid ${c}`, borderRight: `2px solid ${c}` }} />
+      <div style={{ ...base, bottom: 30, left: 30, borderBottom: `2px solid ${c}`, borderLeft: `2px solid ${c}` }} />
+      <div style={{ ...base, bottom: 30, right: 30, borderBottom: `2px solid ${c}`, borderRight: `2px solid ${c}` }} />
+    </>
+  );
+}
+
+function Steam() {
+  return (
+    <div style={{ position: "absolute", left: "50%", top: -12, transform: "translateX(-50%)", display: "flex", gap: 12, pointerEvents: "none" }}>
       {[0, 1, 2, 3].map((i) => (
         <span
           key={i}
           style={{
             display: "block",
-            width: 12,
-            height: 90,
+            width: 11,
+            height: 36,
             borderRadius: 8,
             background: "rgba(255,255,255,.5)",
             filter: "blur(6px)",
@@ -64,84 +100,150 @@ function Steam() {
   );
 }
 
-function Index() {
+function RitualTrack() {
+  const steps = [
+    ["拍照", "读取气质"],
+    ["择锅", "决定底色"],
+    ["下菜", "分配金币"],
+    ["沸腾", "生成报告"],
+  ];
   return (
-    <Stage>
-      {/* 顶部标题 */}
+    <div
+      style={{
+        position: "absolute",
+        left: 330,
+        top: 504,
+        width: 620,
+        height: 54,
+        display: "grid",
+        gridTemplateColumns: "repeat(4,1fr)",
+        alignItems: "start",
+        animation: "lhFade .8s ease .15s both",
+      }}
+    >
       <div
         style={{
           position: "absolute",
-          top: 96,
-          left: 0,
-          right: 0,
-          textAlign: "center",
-          animation: "lhFade .6s ease both",
+          left: 54,
+          right: 54,
+          top: 13,
+          height: 1,
+          background: "linear-gradient(90deg,transparent,rgba(154,107,58,.45),transparent)",
         }}
-      >
+      />
+      {steps.map(([name, desc], i) => (
         <div
+          key={name}
           style={{
-            fontFamily: serif,
-            fontWeight: 900,
-            fontSize: 66,
-            letterSpacing: ".1em",
-            color: "#2c2418",
+            position: "relative",
+            textAlign: "center",
           }}
         >
-          AI 人生火锅
+          <div
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: "50%",
+              margin: "0 auto",
+              background: i === 0 ? "#b4382b" : "rgba(244,237,221,.74)",
+              border: "1px solid rgba(154,107,58,.42)",
+              boxShadow: i === 0 ? "0 0 0 7px rgba(180,56,43,.08)" : "0 6px 14px rgba(90,70,40,.1)",
+              display: "grid",
+              placeItems: "center",
+              color: i === 0 ? "#f4eddd" : "#9a6b3a",
+              fontFamily: serif,
+              fontWeight: 900,
+              fontSize: 12,
+            }}
+          >
+            {i + 1}
+          </div>
+          <div
+            style={{
+              fontFamily: serif,
+              fontWeight: 800,
+              fontSize: 14,
+              color: "#2c2418",
+              letterSpacing: ".1em",
+              marginTop: 5,
+            }}
+          >
+            {name}
+          </div>
+          <div style={{ marginTop: 4, fontSize: 10, color: "#8a6a44", letterSpacing: ".12em" }}>
+            {desc}
+          </div>
         </div>
-        <div style={{ fontSize: 15, letterSpacing: ".5em", color: "#9a6b3a", marginTop: 10 }}>
-          你 的 人 生 · 由 你 来 涮
+      ))}
+    </div>
+  );
+}
+
+function Index() {
+  return (
+    <Stage>
+      <CornerMarks />
+
+      {/* 右上印章 */}
+      <Seal text="人生之味" style={{ position: "absolute", top: 64, right: 84 }} />
+
+      {/* 顶部标题簇 */}
+      <div style={{ position: "absolute", top: 74, left: 0, right: 0, textAlign: "center", animation: "lhFade .6s ease both" }}>
+        <div style={{ fontSize: 13, letterSpacing: ".55em", color: "#9a6b3a" }}>A I 　·　 L I F E　H O T P O T</div>
+        <div style={{ fontFamily: serif, fontWeight: 900, fontSize: 64, letterSpacing: ".16em", color: "#2c2418", marginTop: 12 }}>
+          人 生 火 锅
         </div>
-        <div
-          style={{
-            width: 90,
-            height: 2,
-            margin: "18px auto 0",
-            background: "linear-gradient(90deg,transparent,#b4382b,transparent)",
-          }}
-        />
+        <div style={{ width: 96, height: 2, margin: "16px auto 0", background: "linear-gradient(90deg,transparent,#b4382b,transparent)" }} />
       </div>
 
-      {/* 居中鸳鸯锅 */}
+      {/* 锅后淡暖光晕(取代字符水印,只做焦点,不压字) */}
       <div
         style={{
           position: "absolute",
           left: 640,
-          top: 410,
+          top: 366,
           transform: "translate(-50%,-50%)",
-          width: 300,
-          height: 300,
-          animation: "lhFade .8s ease both",
+          width: 340,
+          height: 340,
+          borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(95,143,122,.12), rgba(180,56,43,.05) 52%, rgba(180,56,43,0) 72%)",
+          pointerEvents: "none",
         }}
-      >
+      />
+
+      {/* 居中鸳鸯锅 */}
+      <div style={{ position: "absolute", left: 640, top: 366, transform: "translate(-50%,-50%)", width: 188, height: 188 }}>
         <Steam />
-        <YuanyangPot />
+        <div
+          style={{
+            position: "absolute",
+            inset: -30,
+            borderRadius: "50%",
+            border: "1px solid rgba(180,56,43,.18)",
+            animation: "lhRingPulse 2.8s ease-in-out infinite",
+          }}
+        />
+        <YuanyangPot left="#b4382b" right="#e9d9b2" />
       </div>
 
-      {/* tagline */}
-      <div
-        style={{
-          position: "absolute",
-          top: 600,
-          left: 0,
-          right: 0,
-          textAlign: "center",
-          fontFamily: serif,
-          fontSize: 22,
-          letterSpacing: ".12em",
-          color: "#5a4630",
-        }}
-      >
-        你以为在配火锅，其实，你正在构建人生。
-      </div>
+      <RitualTrack />
 
       {/* CTA */}
-      <div style={{ position: "absolute", left: 0, right: 0, bottom: 64, textAlign: "center" }}>
-        <Link to="/capture" style={cta}>
-          开 始 · 煮 一 锅 人 生
+      <div style={{ position: "absolute", left: 0, right: 0, bottom: 34, textAlign: "center" }}>
+        <Link to="/capture" className="lh-sweep" style={cta}>
+          开 始 · 煮 一 锅 人 生 <span style={{ fontSize: 18 }}>→</span>
         </Link>
-        <div style={{ marginTop: 16, fontSize: 12, letterSpacing: ".15em", color: "#a98f63" }}>
-          选 1 个锅底 · 三荤两素 · 1–4 种蘸料 · AI 会观察你的每一次犹豫
+        <div
+          style={{
+            marginTop: 14,
+            fontFamily: serif,
+            fontWeight: 700,
+            fontSize: 18,
+            letterSpacing: ".08em",
+            color: "#5a4630",
+          }}
+        >
+          你以为自己在配火锅，<span style={{ color: "#b4382b" }}>其实正在构建人生。</span>
         </div>
       </div>
     </Stage>

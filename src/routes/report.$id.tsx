@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import QRCode from "qrcode";
 import { Stage } from "@/components/Stage";
+import { DIM_LABEL, itemById } from "@/data/hotpot";
 import { decodeSummary } from "@/lib/scoring";
 import { buildReport } from "@/lib/mockReport";
 
@@ -85,6 +86,10 @@ function Report() {
     [summary],
   );
   if (!report) return <ReportError />;
+  const chosenNames = [...summary.base, ...summary.ingredients, ...summary.condiments]
+    .map((id) => itemById(id)?.name)
+    .filter(Boolean)
+    .slice(0, 9);
 
   const chipStyle: CSSProperties = {
     flex: 1,
@@ -245,7 +250,7 @@ function Report() {
               fontSize: 11,
               letterSpacing: ".3em",
               color: "#9a6b3a",
-              marginTop: 20,
+              marginTop: 16,
               position: "relative",
             }}
           >
@@ -315,10 +320,10 @@ function Report() {
           <div
             style={{
               fontFamily: serif,
-              fontSize: 13.5,
-              lineHeight: 1.85,
+              fontSize: 12.4,
+              lineHeight: 1.58,
               color: "#3a2c1c",
-              marginTop: 8,
+              marginTop: 6,
               position: "relative",
             }}
           >
@@ -348,6 +353,7 @@ function Report() {
         {/* 右:二维码 + 再涮一锅 */}
         <div style={{ textAlign: "center", width: 230 }}>
           <div
+            className="lh-sweep"
             style={{
               background: "#f7f0df",
               border: "1px solid rgba(154,123,74,.4)",
@@ -391,10 +397,30 @@ function Report() {
               录屏分享到抖音
             </div>
           </div>
+          <div
+            style={{
+              marginTop: 14,
+              border: "1px solid rgba(154,123,74,.34)",
+              borderRadius: 8,
+              padding: "14px 16px",
+              background: "rgba(247,240,223,.72)",
+              boxShadow: "0 12px 30px rgba(60,40,20,.18)",
+              textAlign: "left",
+              color: "#3a2c1c",
+            }}
+          >
+            <div style={{ fontSize: 10, letterSpacing: ".24em", color: "#9a6b3a" }}>现场弹幕</div>
+            <div style={{ fontFamily: serif, fontWeight: 800, fontSize: 16, color: "#7a2418", marginTop: 6 }}>
+              {DIM_LABEL[report.top[0]]} × {DIM_LABEL[report.top[1]]}
+            </div>
+            <div style={{ fontSize: 11, lineHeight: 1.6, color: "#8a6a44", marginTop: 8 }}>
+              入锅记录 · {chosenNames.join(" / ")}
+            </div>
+          </div>
           <Link
             to="/"
             style={{
-              marginTop: 22,
+              marginTop: 16,
               display: "inline-block",
               border: "1.5px solid #b4382b",
               padding: "12px 34px",

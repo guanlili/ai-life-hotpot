@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { BASES, CONDIMENTS, DIM_LABEL, DIMS, INGREDIENTS, itemById } from "@/data/hotpot";
+import { BASES, CONDIMENTS, INGREDIENTS, itemById } from "@/data/hotpot";
 import { Stage } from "@/components/Stage";
 import { YuanyangPot } from "@/components/hotpot-art";
 import { encodeSummary, type Pick, type SelectionSummary } from "@/lib/scoring";
@@ -35,12 +35,6 @@ const btnPrimary: CSSProperties = {
   fontSize: 18,
   letterSpacing: ".18em",
   boxShadow: "0 8px 20px rgba(150,40,30,.3)",
-};
-const btnPrimaryOff: CSSProperties = {
-  ...btnPrimary,
-  background: "#c4b696",
-  boxShadow: "none",
-  cursor: "not-allowed",
 };
 
 const baseById = (id: string) => BASES.find((b) => b.id === id);
@@ -78,6 +72,53 @@ function SelectBadge({ label }: { label: ReactNode }) {
         {label}
       </div>
     </>
+  );
+}
+
+/* 荤/素 分区标识:落在锅与食材弧之间的空隙,作为分组提示(不拦截点击)。 */
+function SideTag({
+  char,
+  sub,
+  x,
+  count,
+  tone,
+}: {
+  char: string;
+  sub: string;
+  x: number;
+  count: number;
+  tone: string;
+}) {
+  return (
+    <div
+      style={{
+        position: "absolute",
+        left: x,
+        top: 400,
+        transform: "translate(-50%,-50%)",
+        textAlign: "center",
+        pointerEvents: "none",
+        animation: "lhFade .6s ease both",
+      }}
+    >
+      <div
+        style={{
+          fontFamily: serif,
+          fontWeight: 900,
+          fontSize: 56,
+          lineHeight: 1,
+          color: tone,
+          opacity: 0.16,
+        }}
+      >
+        {char}
+      </div>
+      <div
+        style={{ marginTop: 6, fontSize: 11, letterSpacing: ".24em", color: tone, opacity: 0.75 }}
+      >
+        {sub} · {count}
+      </div>
+    </div>
   );
 }
 
@@ -161,7 +202,6 @@ function Play() {
       setConds(conds.filter((x) => x !== id));
       return;
     }
-    if (conds.length >= 4) return;
     recordPick(id);
     setConds([...conds, id]);
   };
@@ -636,7 +676,7 @@ function IngStep({
 }) {
   const ring = INGREDIENTS.map((it, i) => {
     const a = -Math.PI / 2 + (i + 0.5) * ((2 * Math.PI) / 12);
-    return { it, x: C.cx + 452 * Math.cos(a), y: C.cy + 174 * Math.sin(a) };
+    return { it, x: C.cx + 440 * Math.cos(a), y: C.cy + 200 * Math.sin(a) };
   });
   const mm = Math.floor(secs / 60);
   const ss = String(secs % 60).padStart(2, "0");
@@ -705,12 +745,12 @@ function IngStep({
 
       <CenterPot size={340} left={leftColor} right={rightColor} bits={ings} />
 
+      {/* 荤(右) / 素(左) 分区提示 */}
+      <SideTag char="荤" sub="MEAT" x={904} count={meatPicked} tone="#9a3a2c" />
+      <SideTag char="素" sub="VEG" x={376} count={vegPicked} tone="#4f6a2e" />
+
       {ring.map(({ it, x, y }) => {
         const sel = ings.includes(it.id);
-        const topDims = DIMS.slice()
-          .sort((a, b) => (it.weights[b] ?? 0) - (it.weights[a] ?? 0))
-          .slice(0, 2)
-          .map((d) => DIM_LABEL[d]);
         return (
           <div
             key={it.id}
@@ -725,7 +765,7 @@ function IngStep({
               left: x,
               top: y,
               transform: "translate(-50%,-50%)",
-              width: 150,
+              width: 132,
               cursor: "pointer",
               textAlign: "center",
             }}
@@ -733,8 +773,8 @@ function IngStep({
             <div
               style={{
                 position: "relative",
-                width: 130,
-                height: 92,
+                width: 110,
+                height: 78,
                 margin: "0 auto",
                 borderRadius: "50%",
                 background: "radial-gradient(circle at 50% 34%,#f6efe0,#d6c6a0 78%)",
@@ -747,24 +787,24 @@ function IngStep({
             >
               <div
                 style={{
-                  width: 82,
-                  height: 68,
+                  width: 72,
+                  height: 58,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   filter: "drop-shadow(0 3px 3px rgba(80,50,25,.18))",
                 }}
               >
-                <RealFoodVisual food={it.food} size={78} />
+                <RealFoodVisual food={it.food} size={66} />
               </div>
               {sel && <SelectBadge label="✓" />}
             </div>
             <div
               style={{
-                marginTop: 4,
+                marginTop: 3,
                 fontFamily: serif,
                 fontWeight: 700,
-                fontSize: 15,
+                fontSize: 14,
                 color: "#2c2418",
                 letterSpacing: ".06em",
               }}
@@ -774,13 +814,13 @@ function IngStep({
             <div
               style={{
                 fontSize: 10,
-                color: it.kind === "meat" ? "#9a3a2c" : "#5f7a3a",
+                fontWeight: 600,
+                color: it.kind === "meat" ? "#9a3a2c" : "#4f6a2e",
                 letterSpacing: ".04em",
               }}
             >
               {it.kind === "meat" ? "荤" : "素"} · −{it.cost}人生值
             </div>
-            <div style={{ display: "none" }}>偏向 {topDims.join(" / ")}</div>
           </div>
         );
       })}
@@ -1025,7 +1065,7 @@ function SauceStep({
       <ScreenHead
         step="第三步"
         title="调 蘸 料 · 定 行 为 风 格"
-        sub={`挑出你顺手的味道 · 已选 ${conds.length} 味（最多 4）`}
+        sub={`挑出你顺手的味道 · 已选 ${conds.length} 味 · 多少不限，可不选`}
       />
 
       {/* 蘸料网格 */}
@@ -1186,16 +1226,12 @@ function SauceStep({
             ? CONDIMENTS.filter((c) => conds.includes(c.id))
                 .map((c) => c.style)
                 .join(" · ")
-            : "至少选一味"}
+            : "不蘸也是一味"}
         </div>
       </div>
 
       <BottomBar>
-        <button
-          onClick={onConfirm}
-          disabled={conds.length < 1}
-          style={conds.length ? btnPrimary : btnPrimaryOff}
-        >
+        <button onClick={onConfirm} style={btnPrimary}>
           选 好 了
         </button>
       </BottomBar>
@@ -1535,7 +1571,7 @@ function ObserverPanel({
       : step === "ingredients"
         ? `人生值剩余 ${lifeLeft}，越早下锅的选择权重越高。`
         : step === "sauce"
-          ? "蘸料会改变处理事情的方式，最多保留四种味道。"
+          ? "蘸料会改变处理事情的方式，想加几味加几味。"
           : "火锅正在沸腾，AI 正把选择顺序与犹豫时间合成报告。";
   return (
     <div

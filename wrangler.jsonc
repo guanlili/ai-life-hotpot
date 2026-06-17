@@ -1,0 +1,9 @@
+{
+  // Nitro 的 cloudflare-module preset 会在构建时生成 dist/server/wrangler.json
+  // （含 main / assets / nodejs_compat / no_bundle 等运行时所需字段）。
+  // 这里只保留 Nitro 不覆盖的字段：Worker 名称与兼容日期。
+  // main / assets / compatibility_flags 由 Nitro 接管，无需在此重复声明。
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "ai-life-hotpot",
+  "compatibility_date": "2025-05-01"
+}

@@ -1,8 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { BASES, CONDIMENTS, DIM_LABEL, DIMS, INGREDIENTS, itemById } from "@/data/hotpot";
 import { Stage } from "@/components/Stage";
-import { FoodGlyph, YuanyangPot } from "@/components/hotpot-art";
+import { YuanyangPot } from "@/components/hotpot-art";
 import { encodeSummary, type Pick, type SelectionSummary } from "@/lib/scoring";
 import { loadSession, saveSession } from "@/lib/session";
 
@@ -42,25 +42,49 @@ const btnPrimaryOff: CSSProperties = {
   boxShadow: "none",
   cursor: "not-allowed",
 };
-const btnOutline: CSSProperties = {
-  border: "1.5px solid #b09a6a",
-  cursor: "pointer",
-  padding: "12px 40px",
-  borderRadius: 6,
-  background: "transparent",
-  color: "#b09a6a",
-  fontFamily: serif,
-  fontWeight: 700,
-  fontSize: 18,
-  letterSpacing: ".16em",
-};
 
 const baseById = (id: string) => BASES.find((b) => b.id === id);
+
+/* 选中徽标:朱红描边圈 + 右上角标(序号或 ✓)。需放在 position:relative 容器内。 */
+function SelectBadge({ label }: { label: ReactNode }) {
+  return (
+    <>
+      <div
+        style={{
+          position: "absolute",
+          inset: -5,
+          borderRadius: "50%",
+          border: "2.5px solid #b4382b",
+          boxShadow: "0 0 0 4px rgba(180,56,43,.14)",
+          pointerEvents: "none",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          right: -6,
+          top: -6,
+          width: 24,
+          height: 24,
+          borderRadius: "50%",
+          background: "#b4382b",
+          color: "#f4eddd",
+          fontSize: 13,
+          fontWeight: 700,
+          lineHeight: "24px",
+          textAlign: "center",
+        }}
+      >
+        {label}
+      </div>
+    </>
+  );
+}
 
 function Play() {
   const navigate = useNavigate();
   const [step, setStep] = useState<Step>("base");
-  // 鸳鸯锅:选两个锅底,第一个进左鱼,第二个进右鱼
+  // 锅底:不限数量,可不选;前两个依次进左鱼/右鱼上色
   const [bases, setBases] = useState<string[]>([]);
   const [ings, setIngs] = useState<string[]>([]);
   const [conds, setConds] = useState<string[]>([]);
@@ -116,7 +140,6 @@ function Play() {
       setBases(bases.filter((x) => x !== id));
       return;
     }
-    if (bases.length >= 2) return;
     recordPick(id);
     setBases([...bases, id]);
   };
@@ -130,9 +153,6 @@ function Play() {
       setIngs(ings.filter((x) => x !== id));
       return;
     }
-    const it = INGREDIENTS.find((i) => i.id === id)!;
-    if (it.kind === "meat" && meatPicked >= 3) return;
-    if (it.kind === "veg" && vegPicked >= 2) return;
     recordPick(id);
     setIngs([...ings, id]);
   };
@@ -146,17 +166,14 @@ function Play() {
     setConds([...conds, id]);
   };
 
-  const ingsReady = meatPicked === 3 && vegPicked === 2;
   const boilReady = boilStep >= BOIL_LINES.length + 1;
   const usedLife = ings.reduce((s, id) => s + (INGREDIENTS.find((i) => i.id === id)?.cost ?? 0), 0);
   const lifeLeft = Math.max(0, 100 - usedLife);
 
   const leftColor = bases[0] ? baseById(bases[0])?.color : undefined;
   const rightColor = bases[1] ? baseById(bases[1])?.color : undefined;
-  const basesReady = bases.length === 2;
 
   const goReport = () => {
-    if (!basesReady) return;
     const summary: SelectionSummary = {
       base: bases,
       ingredients: ings,
@@ -188,7 +205,6 @@ function Play() {
           rightColor={rightColor}
           secs={secs}
           lifeLeft={lifeLeft}
-          ingsReady={ingsReady}
           onToggle={toggleIng}
           onNext={() => setStep("sauce")}
         />
@@ -236,7 +252,7 @@ function BaseStep({
       <ScreenHead
         step="第一步"
         title="择 锅 底 · 阴 阳 成 锅"
-        sub={`鸳鸯各选一个 · 已选 ${bases.length}/2`}
+        sub={`已选 ${bases.length} 个 · 多少不限，可不选`}
       />
       <CenterPot size={340} left={leftColor} right={rightColor} />
       {BASES.map((b, i) => {
@@ -246,8 +262,10 @@ function BaseStep({
         return (
           <div
             key={b.id}
+            className="lh-card"
             role="button"
             tabIndex={0}
+            aria-pressed={sel}
             onClick={() => onPick(b.id)}
             onKeyDown={(e) => e.key === "Enter" && onPick(b.id)}
             style={{
@@ -298,37 +316,7 @@ function BaseStep({
                     "inset 0 -6px 12px rgba(0,0,0,.25), inset 0 4px 8px rgba(255,255,255,.25)",
                 }}
               />
-              {sel && (
-                <>
-                  <div
-                    style={{
-                      position: "absolute",
-                      inset: -5,
-                      borderRadius: "50%",
-                      border: "2.5px solid #b4382b",
-                      boxShadow: "0 0 0 3px rgba(180,56,43,.13)",
-                    }}
-                  />
-                  <div
-                    style={{
-                      position: "absolute",
-                      right: -7,
-                      top: -7,
-                      width: 24,
-                      height: 24,
-                      borderRadius: "50%",
-                      background: "#b4382b",
-                      color: "#f4eddd",
-                      fontSize: 14,
-                      fontWeight: 700,
-                      lineHeight: "24px",
-                      textAlign: "center",
-                    }}
-                  >
-                    {idx + 1}
-                  </div>
-                </>
-              )}
+              {sel && <SelectBadge label={idx + 1} />}
             </div>
             <div style={{ minWidth: 0, flex: 1, textAlign: leftSide ? "left" : "right" }}>
               <div
@@ -370,11 +358,7 @@ function BaseStep({
         );
       })}
       <BottomBar>
-        <button
-          onClick={onNext}
-          disabled={bases.length < 2}
-          style={bases.length === 2 ? btnPrimary : btnPrimaryOff}
-        >
+        <button onClick={onNext} style={btnPrimary}>
           下 一 步 · 配 食 材
         </button>
       </BottomBar>
@@ -383,6 +367,252 @@ function BaseStep({
 }
 
 /* ============ 食材 ============ */
+function RealFoodVisual({ food, size = 82 }: { food: string; size?: number }) {
+  const piece = (key: string, style: CSSProperties) => (
+    <span key={key} style={{ position: "absolute", ...style }} />
+  );
+  const items: ReactNode[] = [];
+
+  if (food === "beef" || food === "lamb") {
+    const meatColors =
+      food === "beef" ? ["#d35f64", "#f0b2b5", "#a9444e"] : ["#d98d95", "#f4c4c7", "#ba6670"];
+    for (let i = 0; i < 5; i++) {
+      items.push(
+        piece(`roll${i}`, {
+          left: 12 + (i % 3) * 20,
+          top: 16 + Math.floor(i / 3) * 22,
+          width: 32,
+          height: 20,
+          borderRadius: "50%",
+          background: `radial-gradient(ellipse at 38% 44%,${meatColors[1]} 0 22%,${meatColors[0]} 24% 58%,${meatColors[2]} 60% 100%)`,
+          boxShadow: "0 2px 4px rgba(90,40,35,.24), inset 0 1px 3px rgba(255,255,255,.32)",
+          transform: `rotate(${-18 + i * 14}deg)`,
+        }),
+      );
+    }
+    items.push(
+      piece("marble", {
+        left: 18,
+        top: 30,
+        width: 48,
+        height: 18,
+        borderRadius: "50%",
+        background:
+          "repeating-linear-gradient(120deg,transparent 0 8px,rgba(255,245,235,.55) 9px 11px,transparent 12px 18px)",
+        opacity: 0.7,
+      }),
+    );
+  } else if (food === "shrimp") {
+    items.push(
+      piece("paste", {
+        left: 16,
+        top: 18,
+        width: 54,
+        height: 46,
+        borderRadius: "44% 56% 48% 52%",
+        background: "radial-gradient(circle at 38% 30%,#fff4ee,#f7b08e 50%,#ec7a3c)",
+        boxShadow: "0 5px 9px rgba(150,70,35,.26), inset 0 5px 8px rgba(255,255,255,.42)",
+        transform: "rotate(-14deg)",
+      }),
+    );
+    for (let i = 0; i < 5; i++) {
+      items.push(
+        piece(`shrimp-line${i}`, {
+          left: 22 + i * 8,
+          top: 28 + (i % 2) * 8,
+          width: 14,
+          height: 3,
+          borderRadius: 4,
+          background: "rgba(200,72,36,.45)",
+          transform: `rotate(${20 - i * 8}deg)`,
+        }),
+      );
+    }
+  } else if (food === "fish") {
+    for (let i = 0; i < 5; i++) {
+      items.push(
+        piece(`fish${i}`, {
+          left: 12 + (i % 3) * 19,
+          top: 16 + Math.floor(i / 3) * 21,
+          width: 39,
+          height: 15,
+          borderRadius: "50% 48% 46% 52%",
+          background: "linear-gradient(100deg,#fff7f5,#f3d5d8 60%,#dbadb4)",
+          border: "1px solid rgba(190,130,135,.32)",
+          boxShadow: "0 2px 4px rgba(90,40,35,.16)",
+          transform: `rotate(${-18 + i * 13}deg)`,
+        }),
+      );
+    }
+  } else if (food === "spam") {
+    for (let i = 0; i < 4; i++) {
+      items.push(
+        piece(`spam${i}`, {
+          left: 18 + (i % 2) * 24,
+          top: 14 + Math.floor(i / 2) * 23,
+          width: 28,
+          height: 20,
+          borderRadius: 4,
+          background: "linear-gradient(145deg,#f0aaa2,#d87670)",
+          border: "1px solid rgba(160,70,65,.25)",
+          boxShadow: "0 3px 5px rgba(120,50,45,.18), inset 0 2px 4px rgba(255,255,255,.26)",
+          transform: `rotate(${-8 + i * 6}deg)`,
+        }),
+      );
+    }
+    for (let i = 0; i < 10; i++) {
+      items.push(
+        piece(`spam-dot${i}`, {
+          left: 22 + ((i * 11) % 44),
+          top: 19 + ((i * 17) % 38),
+          width: 3,
+          height: 3,
+          borderRadius: "50%",
+          background: "rgba(145,58,58,.38)",
+        }),
+      );
+    }
+  } else if (food === "beefball") {
+    for (let i = 0; i < 4; i++) {
+      items.push(
+        piece(`ball${i}`, {
+          left: 18 + (i % 2) * 28,
+          top: 16 + Math.floor(i / 2) * 25,
+          width: 25,
+          height: 25,
+          borderRadius: "50%",
+          background: "radial-gradient(circle at 34% 28%,#d3ad86,#9f704c 68%,#6d442e)",
+          boxShadow: "0 3px 6px rgba(80,45,25,.28), inset -4px -5px 8px rgba(0,0,0,.16)",
+        }),
+      );
+    }
+  } else if (food === "greens") {
+    for (let i = 0; i < 6; i++) {
+      items.push(
+        piece(`leaf${i}`, {
+          left: 16 + (i % 3) * 15,
+          top: 14 + Math.floor(i / 3) * 24,
+          width: 18,
+          height: 39,
+          borderRadius: "70% 30% 70% 30%",
+          background: `linear-gradient(135deg,${i % 2 ? "#75b957" : "#4b983d"},#276a28)`,
+          boxShadow: "inset 2px 1px 2px rgba(255,255,255,.18), 0 2px 3px rgba(30,70,25,.18)",
+          transform: `rotate(${-38 + i * 16}deg)`,
+        }),
+      );
+    }
+  } else if (food === "tofu") {
+    for (let i = 0; i < 5; i++) {
+      items.push(
+        piece(`tofu${i}`, {
+          left: 13 + (i % 3) * 20,
+          top: 15 + Math.floor(i / 3) * 23,
+          width: 22,
+          height: 19,
+          borderRadius: 3,
+          background: "linear-gradient(145deg,#fff8df,#eadfbd)",
+          border: "1px solid rgba(180,160,110,.28)",
+          boxShadow: "0 3px 5px rgba(120,100,70,.16), inset 0 2px 3px rgba(255,255,255,.52)",
+          transform: `rotate(${-8 + i * 7}deg)`,
+        }),
+      );
+    }
+  } else if (food === "corn") {
+    items.push(
+      piece("corn", {
+        left: 31,
+        top: 9,
+        width: 24,
+        height: 62,
+        borderRadius: 16,
+        background:
+          "repeating-linear-gradient(90deg,rgba(190,132,22,.3) 0 2px,transparent 2px 7px), repeating-linear-gradient(0deg,#f3ce47 0 7px,#e5a932 8px 10px)",
+        boxShadow: "0 4px 7px rgba(120,80,25,.22), inset 4px 0 6px rgba(255,255,255,.28)",
+        transform: "rotate(18deg)",
+      }),
+    );
+    items.push(
+      piece("corn-leaf", {
+        left: 19,
+        top: 36,
+        width: 22,
+        height: 34,
+        borderRadius: "80% 10% 80% 10%",
+        background: "#6f9e37",
+        transform: "rotate(-28deg)",
+      }),
+    );
+  } else if (food === "enoki") {
+    for (let i = 0; i < 18; i++) {
+      items.push(
+        piece(`enoki${i}`, {
+          left: 20 + (i % 6) * 8,
+          top: 14 + Math.floor(i / 6) * 8,
+          width: 3,
+          height: 43,
+          borderRadius: 3,
+          background: "#f1e3bd",
+          transform: `rotate(${-16 + (i % 6) * 6}deg)`,
+        }),
+      );
+      items.push(
+        piece(`cap${i}`, {
+          left: 18 + (i % 6) * 8,
+          top: 10 + Math.floor(i / 6) * 8,
+          width: 7,
+          height: 7,
+          borderRadius: "50%",
+          background: "#e0c996",
+        }),
+      );
+    }
+  } else if (food === "fungus") {
+    for (let i = 0; i < 7; i++) {
+      items.push(
+        piece(`fungus${i}`, {
+          left: 14 + ((i * 15) % 48),
+          top: 14 + ((i * 19) % 42),
+          width: 26,
+          height: 21,
+          borderRadius: "52% 48% 58% 42%",
+          background: "radial-gradient(circle at 35% 28%,#5a3826,#27160f 70%)",
+          boxShadow: "0 2px 4px rgba(20,10,5,.28), inset 2px 2px 4px rgba(255,255,255,.08)",
+          transform: `rotate(${i * 29}deg)`,
+        }),
+      );
+    }
+  } else {
+    for (let i = 0; i < 7; i++) {
+      items.push(
+        piece(`noodle${i}`, {
+          left: 14,
+          top: 20 + i * 6,
+          width: 58,
+          height: 14,
+          borderRadius: "50%",
+          borderTop: "3px solid #ead59b",
+          transform: `rotate(${-12 + i * 5}deg)`,
+        }),
+      );
+    }
+  }
+
+  return (
+    <div
+      style={{
+        position: "relative",
+        width: size,
+        height: size,
+        overflow: "hidden",
+        borderRadius: "50%",
+        background: "radial-gradient(circle at 50% 45%,rgba(255,255,255,.16),transparent 70%)",
+      }}
+    >
+      {items}
+    </div>
+  );
+}
+
 function IngStep({
   ings,
   meatPicked,
@@ -391,7 +621,6 @@ function IngStep({
   rightColor,
   secs,
   lifeLeft,
-  ingsReady,
   onToggle,
   onNext,
 }: {
@@ -402,13 +631,12 @@ function IngStep({
   rightColor?: string;
   secs: number;
   lifeLeft: number;
-  ingsReady: boolean;
   onToggle: (id: string) => void;
   onNext: () => void;
 }) {
   const ring = INGREDIENTS.map((it, i) => {
     const a = -Math.PI / 2 + (i + 0.5) * ((2 * Math.PI) / 12);
-    return { it, x: C.cx + 452 * Math.cos(a), y: C.cy + 216 * Math.sin(a) };
+    return { it, x: C.cx + 452 * Math.cos(a), y: C.cy + 174 * Math.sin(a) };
   });
   const mm = Math.floor(secs / 60);
   const ss = String(secs % 60).padStart(2, "0");
@@ -459,7 +687,7 @@ function IngStep({
           两分 · {mm}:{ss}
         </div>
         <div style={{ fontSize: 12, color: "#8a6a44", marginTop: 3, letterSpacing: ".1em" }}>
-          三荤两素 · 荤 {meatPicked}/3 · 素 {vegPicked}/2
+          荤 {meatPicked} · 素 {vegPicked} · 多少不限，可不选
         </div>
       </div>
 
@@ -467,9 +695,6 @@ function IngStep({
 
       {ring.map(({ it, x, y }) => {
         const sel = ings.includes(it.id);
-        const full =
-          (it.kind === "meat" && meatPicked >= 3 && !sel) ||
-          (it.kind === "veg" && vegPicked >= 2 && !sel);
         const topDims = DIMS.slice()
           .sort((a, b) => (it.weights[b] ?? 0) - (it.weights[a] ?? 0))
           .slice(0, 2)
@@ -479,9 +704,10 @@ function IngStep({
             key={it.id}
             className="lh-clickable"
             role="button"
-            tabIndex={full ? -1 : 0}
+            tabIndex={0}
+            aria-pressed={sel}
             onClick={() => onToggle(it.id)}
-            onKeyDown={(e) => !full && e.key === "Enter" && onToggle(it.id)}
+            onKeyDown={(e) => e.key === "Enter" && onToggle(it.id)}
             style={{
               position: "absolute",
               left: x,
@@ -490,8 +716,6 @@ function IngStep({
               width: 150,
               cursor: "pointer",
               textAlign: "center",
-              opacity: full ? 0.4 : 1,
-              transition: "opacity .3s",
             }}
           >
             <div
@@ -509,42 +733,23 @@ function IngStep({
                 justifyContent: "center",
               }}
             >
-              <div style={{ width: 58, height: 58 }}>
-                <FoodGlyph name={it.food} />
+              <div
+                style={{
+                  width: 82,
+                  height: 68,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  filter: "drop-shadow(0 3px 3px rgba(80,50,25,.18))",
+                }}
+              >
+                <RealFoodVisual food={it.food} size={78} />
               </div>
-              {sel && (
-                <>
-                  <div
-                    style={{
-                      position: "absolute",
-                      inset: -5,
-                      borderRadius: "50%",
-                      border: "2.5px solid #b4382b",
-                      boxShadow: "0 0 0 4px rgba(180,56,43,.14)",
-                    }}
-                  />
-                  <div
-                    style={{
-                      position: "absolute",
-                      right: -4,
-                      top: -6,
-                      width: 24,
-                      height: 24,
-                      borderRadius: "50%",
-                      background: "#b4382b",
-                      color: "#f4eddd",
-                      fontSize: 13,
-                      lineHeight: "24px",
-                    }}
-                  >
-                    ✓
-                  </div>
-                </>
-              )}
+              {sel && <SelectBadge label="✓" />}
             </div>
             <div
               style={{
-                marginTop: 6,
+                marginTop: 4,
                 fontFamily: serif,
                 fontWeight: 700,
                 fontSize: 15,
@@ -563,9 +768,7 @@ function IngStep({
             >
               {it.kind === "meat" ? "荤" : "素"} · −{it.cost}人生值
             </div>
-            <div style={{ fontSize: 10, color: "#8a6a44", marginTop: 2 }}>
-              偏向 {topDims.join(" / ")}
-            </div>
+            <div style={{ display: "none" }}>偏向 {topDims.join(" / ")}</div>
           </div>
         );
       })}
@@ -610,12 +813,20 @@ function IngStep({
         style={{
           position: "absolute",
           left: 640,
-          bottom: 30,
+          bottom: 6,
           transform: "translateX(-50%)",
           textAlign: "center",
         }}
       >
-        <button onClick={onNext} disabled={!ingsReady} style={ingsReady ? btnPrimary : btnOutline}>
+        <button
+          onClick={onNext}
+          style={{
+            ...btnPrimary,
+            padding: "10px 38px",
+            fontSize: 16,
+            boxShadow: "0 8px 18px rgba(150,40,30,.26)",
+          }}
+        >
           开 始 涮 人 生
         </button>
       </div>
@@ -624,6 +835,123 @@ function IngStep({
 }
 
 /* ============ 蘸料 ============ */
+function CondimentVisual({ id, large = false }: { id: string; large?: boolean }) {
+  const scale = large ? 1.28 : 1;
+  const dot = (key: string, style: CSSProperties) => (
+    <span key={key} style={{ position: "absolute", ...style }} />
+  );
+  const bits: ReactNode[] = [];
+
+  if (id === "garlic") {
+    for (let i = 0; i < 18; i++) {
+      bits.push(
+        dot(`g${i}`, {
+          left: 18 + ((i * 17) % 44),
+          top: 18 + ((i * 23) % 44),
+          width: 7 * scale,
+          height: 6 * scale,
+          borderRadius: "45%",
+          background: i % 3 ? "#f1ead2" : "#d8cda9",
+          boxShadow: "inset -1px -1px 1px rgba(130,110,70,.28)",
+          transform: `rotate(${i * 31}deg)`,
+        }),
+      );
+    }
+  } else if (id === "cilantro" || id === "scallion") {
+    const colors =
+      id === "cilantro" ? ["#287a38", "#3f9a4a", "#76b85b"] : ["#4a9a44", "#91c96a", "#e3efd0"];
+    for (let i = 0; i < 20; i++) {
+      bits.push(
+        dot(`${id}${i}`, {
+          left: 15 + ((i * 19) % 50),
+          top: 17 + ((i * 29) % 46),
+          width: (id === "scallion" ? 12 : 11) * scale,
+          height: (id === "scallion" ? 4 : 6) * scale,
+          borderRadius: id === "scallion" ? 8 : "65% 35% 65% 35%",
+          background: colors[i % colors.length],
+          transform: `rotate(${(i * 37) % 180}deg)`,
+          boxShadow: "0 1px 1px rgba(0,0,0,.18)",
+        }),
+      );
+    }
+  } else if (id === "chili" || id === "chilioil") {
+    for (let i = 0; i < 13; i++) {
+      bits.push(
+        dot(`c${i}`, {
+          left: 16 + ((i * 21) % 48),
+          top: 15 + ((i * 27) % 50),
+          width: 13 * scale,
+          height: 8 * scale,
+          borderRadius: "50%",
+          background: i % 2 ? "#d83b21" : "#a92016",
+          border: "1px solid rgba(255,185,120,.42)",
+          transform: `rotate(${i * 29}deg)`,
+          boxShadow: "inset 0 0 0 2px rgba(90,20,10,.18)",
+        }),
+      );
+    }
+    if (id === "chilioil") {
+      bits.unshift(
+        dot("oil", {
+          inset: 10,
+          borderRadius: "50%",
+          background:
+            "radial-gradient(circle at 40% 34%,rgba(255,155,64,.86),rgba(180,45,24,.9) 64%,rgba(120,24,16,.92))",
+          filter: "saturate(1.1)",
+        }),
+      );
+    }
+  } else if (id === "sesame" || id === "peanut") {
+    for (let i = 0; i < (id === "sesame" ? 28 : 18); i++) {
+      bits.push(
+        dot(`${id}${i}`, {
+          left: 15 + ((i * 13) % 52),
+          top: 16 + ((i * 23) % 48),
+          width: (id === "sesame" ? 4 : 9) * scale,
+          height: (id === "sesame" ? 7 : 7) * scale,
+          borderRadius: id === "sesame" ? "50%" : "40%",
+          background:
+            id === "sesame" ? (i % 3 ? "#ead9a6" : "#fff1c8") : i % 2 ? "#c48748" : "#e0b477",
+          transform: `rotate(${i * 41}deg)`,
+          boxShadow: "0 1px 1px rgba(0,0,0,.2)",
+        }),
+      );
+    }
+  } else {
+    const sauceMap: Record<string, string> = {
+      oyster: "radial-gradient(circle at 38% 30%,#8a6239,#4d2d18 66%,#2b170d)",
+      vinegar: "radial-gradient(circle at 40% 32%,#7b3a1b,#3f1f12 72%,#1d0d08)",
+      sesameoil: "radial-gradient(circle at 38% 30%,#ffd068,#d89b23 64%,#9b6416)",
+    };
+    bits.push(
+      dot(id, {
+        inset: 9,
+        borderRadius: "50%",
+        background: sauceMap[id],
+        boxShadow: "inset 0 5px 12px rgba(255,255,255,.18), inset 0 -8px 16px rgba(0,0,0,.24)",
+      }),
+    );
+    bits.push(
+      dot(`${id}-shine`, {
+        left: 24,
+        top: 18,
+        width: 26,
+        height: 10,
+        borderRadius: "50%",
+        background: "rgba(255,255,255,.22)",
+        filter: "blur(2px)",
+        transform: "rotate(-12deg)",
+      }),
+    );
+  }
+
+  return (
+    <div style={{ position: "absolute", inset: 0, overflow: "hidden", borderRadius: "50%" }}>
+      {bits}
+    </div>
+  );
+}
+
 function SauceStep({
   conds,
   onToggle,
@@ -633,17 +961,28 @@ function SauceStep({
   onToggle: (id: string) => void;
   onConfirm: () => void;
 }) {
-  const bits = conds.flatMap((id, i) => {
+  const oilColors = conds
+    .map((id) => CONDIMENTS.find((c) => c.id === id)?.color)
+    .filter(Boolean)
+    .slice(0, 4) as string[];
+  const mixedBits = conds.flatMap((id, i) => {
     const s = CONDIMENTS.find((c) => c.id === id);
     if (!s) return [];
-    return [0, 1, 2, 3].map((j) => {
-      const a = i * 1.7 + j * 1.25;
-      const r = 22 + j * 11;
+    const count = ["sesame", "cilantro", "scallion"].includes(id) ? 9 : 6;
+    return Array.from({ length: count }, (_, j) => {
+      const a = i * 1.55 + j * 1.08;
+      const r = 20 + ((j * 13 + i * 7) % 58);
+      const isLeaf = id === "cilantro" || id === "scallion";
+      const isRing = id === "chili" || id === "chilioil";
       return {
+        id,
         color: s.color,
-        size: 7 + (j % 3) * 2,
+        size: isLeaf ? 11 : isRing ? 12 : id === "sesame" ? 5 : 8,
         x: 115 + r * Math.cos(a),
         y: 115 + r * Math.sin(a),
+        rot: (i * 47 + j * 31) % 180,
+        leaf: isLeaf,
+        ring: isRing,
       };
     });
   });
@@ -672,21 +1011,24 @@ function SauceStep({
           return (
             <div
               key={s.id}
+              className="lh-card"
               role="button"
               tabIndex={0}
+              aria-pressed={sel}
               onClick={() => onToggle(s.id)}
               onKeyDown={(e) => e.key === "Enter" && onToggle(s.id)}
-              style={{ cursor: "pointer", textAlign: "center" }}
+              style={{ cursor: "pointer", textAlign: "center", outline: "none" }}
             >
               <div
                 style={{
                   position: "relative",
-                  width: 96,
-                  height: 96,
+                  width: 104,
+                  height: 104,
                   margin: "0 auto",
                   borderRadius: "50%",
-                  background: "radial-gradient(circle at 50% 30%,#33271a,#15100a)",
-                  boxShadow: "0 10px 20px rgba(0,0,0,.3), inset 0 3px 7px rgba(255,255,255,.08)",
+                  background: "radial-gradient(circle at 50% 30%,#f4ecd9,#bd9f67 78%)",
+                  boxShadow:
+                    "0 12px 22px rgba(90,70,40,.24), inset 0 5px 10px rgba(255,255,255,.52), inset 0 -8px 18px rgba(95,70,35,.26)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -694,42 +1036,20 @@ function SauceStep({
               >
                 <div
                   style={{
-                    width: 62,
-                    height: 62,
+                    position: "relative",
+                    width: 76,
+                    height: 76,
                     borderRadius: "50%",
-                    background: s.color,
-                    boxShadow: "inset 0 -5px 10px rgba(0,0,0,.3)",
+                    background:
+                      "radial-gradient(circle at 50% 34%,rgba(255,255,255,.2),rgba(40,25,12,.12) 72%), radial-gradient(circle at 50% 50%,#3a2416,#191009)",
+                    boxShadow:
+                      "inset 0 4px 8px rgba(255,255,255,.08), inset 0 -8px 12px rgba(0,0,0,.34)",
+                    overflow: "hidden",
                   }}
-                />
-                {sel && (
-                  <>
-                    <div
-                      style={{
-                        position: "absolute",
-                        inset: -4,
-                        borderRadius: "50%",
-                        border: "2.5px solid #b4382b",
-                        boxShadow: "0 0 0 4px rgba(180,56,43,.14)",
-                      }}
-                    />
-                    <div
-                      style={{
-                        position: "absolute",
-                        right: -2,
-                        top: -4,
-                        width: 24,
-                        height: 24,
-                        borderRadius: "50%",
-                        background: "#b4382b",
-                        color: "#f4eddd",
-                        fontSize: 13,
-                        lineHeight: "24px",
-                      }}
-                    >
-                      ✓
-                    </div>
-                  </>
-                )}
+                >
+                  <CondimentVisual id={s.id} />
+                </div>
+                {sel && <SelectBadge label="✓" />}
               </div>
               <div
                 style={{
@@ -783,10 +1103,32 @@ function SauceStep({
               width: 150,
               height: 150,
               borderRadius: "50%",
-              background: "rgba(120,95,55,.12)",
+              background: oilColors.length
+                ? `radial-gradient(circle at 40% 34%,rgba(255,255,255,.16),transparent 24%), conic-gradient(from 20deg, ${oilColors.join(", ")}, ${oilColors[0]}), radial-gradient(circle,#7a3a20,#25140c)`
+                : "rgba(120,95,55,.12)",
+              boxShadow: oilColors.length
+                ? "inset 0 8px 16px rgba(255,255,255,.12), inset 0 -14px 24px rgba(0,0,0,.28)"
+                : undefined,
+              overflow: "hidden",
             }}
-          />
-          {bits.map((d, i) => (
+          >
+            {oilColors.length > 0 && (
+              <span
+                style={{
+                  position: "absolute",
+                  left: 34,
+                  top: 26,
+                  width: 56,
+                  height: 18,
+                  borderRadius: "50%",
+                  background: "rgba(255,244,190,.28)",
+                  filter: "blur(4px)",
+                  transform: "rotate(-13deg)",
+                }}
+              />
+            )}
+          </div>
+          {mixedBits.map((d, i) => (
             <span
               key={i}
               style={{
@@ -794,10 +1136,12 @@ function SauceStep({
                 left: d.x,
                 top: d.y,
                 width: d.size,
-                height: d.size,
-                borderRadius: "50%",
+                height: d.leaf ? 5 : d.ring ? 8 : d.size,
+                borderRadius: d.leaf ? 8 : d.ring ? "50%" : "50%",
                 background: d.color,
-                boxShadow: "0 1px 3px rgba(0,0,0,.25)",
+                border: d.ring ? "1px solid rgba(255,210,140,.42)" : undefined,
+                boxShadow: "0 1px 3px rgba(0,0,0,.28)",
+                transform: `rotate(${d.rot}deg)`,
                 animation: "lhDrop .5s ease both",
               }}
             />
@@ -909,8 +1253,7 @@ function BoilStep({
             position: "absolute",
             inset: 34,
             borderRadius: "50%",
-            boxShadow:
-              "inset 0 0 36px rgba(255,232,160,.22), 0 0 42px rgba(255,100,34,.22)",
+            boxShadow: "inset 0 0 36px rgba(255,232,160,.22), 0 0 42px rgba(255,100,34,.22)",
             animation: "lhBrothBoil 1.25s ease-in-out infinite",
             pointerEvents: "none",
           }}
@@ -1194,12 +1537,88 @@ function ObserverPanel({
         {pickToast || copy}
       </div>
       {selected && (
-        <div style={{ marginTop: 10, fontSize: 11, color: dark ? "#caa05a" : "#8a6a44", lineHeight: 1.5 }}>
+        <div
+          style={{
+            marginTop: 10,
+            fontSize: 11,
+            color: dark ? "#caa05a" : "#8a6a44",
+            lineHeight: 1.5,
+          }}
+        >
           最近入锅 · {selected}
         </div>
       )}
     </div>
   );
+}
+
+function potIngredientStyle(food: string, tint: string, i: number): CSSProperties {
+  const base: CSSProperties = {
+    position: "absolute",
+    boxShadow: "0 2px 4px rgba(0,0,0,.28)",
+    animation: "lhDrop .6s ease both",
+  };
+  if (["beef", "lamb", "fish"].includes(food)) {
+    return {
+      ...base,
+      width: 28,
+      height: 13,
+      borderRadius: "50%",
+      background:
+        food === "fish"
+          ? "linear-gradient(100deg,#fff7f5,#e9c1c6)"
+          : `radial-gradient(ellipse at 40% 40%,#f4c0c3,${tint} 62%,#9a3a44)`,
+      transform: `translate(-50%,-50%) rotate(${-18 + i * 17}deg)`,
+    };
+  }
+  if (food === "shrimp") {
+    return {
+      ...base,
+      width: 25,
+      height: 15,
+      borderRadius: "52% 48% 52% 48%",
+      background: "linear-gradient(120deg,#fff0e5,#f28a4a)",
+      transform: `translate(-50%,-50%) rotate(${i * 23}deg)`,
+    };
+  }
+  if (food === "spam" || food === "tofu") {
+    return {
+      ...base,
+      width: 20,
+      height: 16,
+      borderRadius: 3,
+      background: food === "tofu" ? "linear-gradient(145deg,#fff8df,#eadfbd)" : "#e7a7a0",
+      transform: `translate(-50%,-50%) rotate(${-8 + i * 11}deg)`,
+    };
+  }
+  if (food === "beefball") {
+    return {
+      ...base,
+      width: 18,
+      height: 18,
+      borderRadius: "50%",
+      background: "radial-gradient(circle at 35% 28%,#d3ad86,#8f5f40)",
+      transform: "translate(-50%,-50%)",
+    };
+  }
+  if (["greens", "enoki", "noodle"].includes(food)) {
+    return {
+      ...base,
+      width: food === "greens" ? 13 : 25,
+      height: food === "greens" ? 24 : 5,
+      borderRadius: food === "greens" ? "70% 30% 70% 30%" : 8,
+      background: food === "greens" ? "linear-gradient(135deg,#75b957,#276a28)" : "#ead59b",
+      transform: `translate(-50%,-50%) rotate(${-30 + i * 18}deg)`,
+    };
+  }
+  return {
+    ...base,
+    width: food === "corn" ? 14 : 18,
+    height: food === "corn" ? 22 : 14,
+    borderRadius: food === "corn" ? 8 : "52% 48% 58% 42%",
+    background: food === "corn" ? "#f0c23a" : tint,
+    transform: `translate(-50%,-50%) rotate(${i * 19}deg)`,
+  };
 }
 
 function CenterPot({
@@ -1237,16 +1656,10 @@ function CenterPot({
                 <span
                   key={id}
                   style={{
+                    ...potIngredientStyle(it.food, it.tint, i),
                     position: "absolute",
                     left: `calc(50% + ${r * Math.cos(a)}px)`,
                     top: `calc(48% + ${r * Math.sin(a)}px)`,
-                    width: 18,
-                    height: 18,
-                    borderRadius: "50%",
-                    background: it.tint,
-                    boxShadow: "0 2px 4px rgba(0,0,0,.3)",
-                    transform: "translate(-50%,-50%)",
-                    animation: "lhDrop .6s ease both",
                   }}
                 />
               );

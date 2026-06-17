@@ -51,10 +51,11 @@ const DIMLINE: Record<Dim, string> = {
 };
 
 export function buildReport(summary: SelectionSummary): LifeReport {
-  // 鸳鸯锅:base 为数组,最多两个锅底
+  // 鸳鸯锅:base 为数组;可不选(空数组也是一种选择)
   const chosenBases = (Array.isArray(summary.base) ? summary.base : [])
     .map((id) => BASES.find((b) => b.id === id))
     .filter((b): b is Base => !!b);
+  const noBase = chosenBases.length === 0;
   const b0 = chosenBases[0] ?? BASES[0];
   const b1 = chosenBases[1];
   const ings = summary.ingredients
@@ -74,12 +75,14 @@ export function buildReport(summary: SelectionSummary): LifeReport {
   // 核心食材:cost 最高的荤,否则首个素
   const coreMeat = meats.slice().sort((a, b) => b.cost - a.cost)[0];
 
-  const toneText = b1 ? `${b0.tone} · ${b1.tone}` : b0.tone;
+  const toneText = noBase ? "本味" : b1 ? `${b0.tone} · ${b1.tone}` : b0.tone;
   const flavor = `${toneText}底色之下 · ${ADJ[t1]}又${ADJ[t2]}的人`;
   const styleWord = conds[0] ? conds[0].style : "随性";
-  const baseText = b1
-    ? `你给人生配了一锅鸳鸯:${b0.name}作底,${b1.name}相和——${b0.tagline},${b1.tagline}。`
-    : `你给人生选了「${b0.name}」作底——${b0.tagline}。`;
+  const baseText = noBase
+    ? `你没有刻意挑锅底——端上来什么锅都接得住,清水白锅也能涮出人生。`
+    : b1
+      ? `你给人生配了一锅鸳鸯:${b0.name}作底,${b1.name}相和——${b0.tagline},${b1.tagline}。`
+      : `你给人生选了「${b0.name}」作底——${b0.tagline}。`;
 
   const story =
     baseText +
@@ -92,7 +95,7 @@ export function buildReport(summary: SelectionSummary): LifeReport {
 
   return {
     flavor,
-    baseName: b1 ? `${b0.name} · ${b1.name}` : b0.name,
+    baseName: noBase ? "清水白锅" : b1 ? `${b0.name} · ${b1.name}` : b0.name,
     baseTone: toneText,
     coreIng: coreMeat ? coreMeat.name : vegs[0] ? vegs[0].name : "—",
     soulSauce: conds[0] ? conds[0].name : "原味",

@@ -81,11 +81,8 @@ function Report() {
       .catch(() => setQr(null));
   }, [id]);
 
-  const report = useMemo(
-    () => (summary && summary.base.length > 0 ? buildReport(summary) : null),
-    [summary],
-  );
-  if (!report) return <ReportError />;
+  const report = useMemo(() => (summary ? buildReport(summary) : null), [summary]);
+  if (!summary || !report) return <ReportError />;
   const chosenNames = [...summary.base, ...summary.ingredients, ...summary.condiments]
     .map((id) => itemById(id)?.name)
     .filter(Boolean)

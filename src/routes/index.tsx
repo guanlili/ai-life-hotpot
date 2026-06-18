@@ -113,7 +113,7 @@ function RitualTrack() {
       style={{
         position: "absolute",
         left: 330,
-        top: 504,
+        top: 432,
         width: 620,
         height: 54,
         display: "grid",
@@ -203,7 +203,7 @@ function Index() {
         style={{
           position: "absolute",
           left: 640,
-          top: 366,
+          top: 296,
           transform: "translate(-50%,-50%)",
           width: 340,
           height: 340,
@@ -214,7 +214,7 @@ function Index() {
       />
 
       {/* 居中鸳鸯锅 */}
-      <div style={{ position: "absolute", left: 640, top: 366, transform: "translate(-50%,-50%)", width: 188, height: 188 }}>
+      <div style={{ position: "absolute", left: 640, top: 296, transform: "translate(-50%,-50%)", width: 188, height: 188 }}>
         <Steam />
         <div
           style={{
@@ -230,10 +230,46 @@ function Index() {
 
       <RitualTrack />
 
-      {/* CTA */}
-      <div style={{ position: "absolute", left: 0, right: 0, bottom: 34, textAlign: "center" }}>
-        {/* 昵称:仅展示用,不进入人生故事生成 */}
-        <div style={{ marginBottom: 18 }}>
+      {/* 底部竖排:四步流程 → 署名(称呼) → 开始 → 标语,逐层递进不重叠 */}
+      <div
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          top: 506,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+      >
+        {/* 署名红签:仅展示用,不进入人生故事生成。呼应招牌红条 */}
+        <label
+          style={{
+            display: "inline-flex",
+            alignItems: "stretch",
+            borderRadius: 7,
+            overflow: "hidden",
+            border: "1.5px solid rgba(180,56,43,.55)",
+            boxShadow: "0 6px 16px rgba(150,40,30,.16)",
+            animation: "lhFade .8s ease .2s both",
+          }}
+        >
+          <span
+            style={{
+              display: "grid",
+              placeItems: "center",
+              background: "#b4382b",
+              color: "#f4eddd",
+              fontFamily: serif,
+              fontWeight: 800,
+              fontSize: 16,
+              letterSpacing: ".18em",
+              padding: "0 16px",
+              writingMode: "horizontal-tb",
+            }}
+          >
+            署名
+          </span>
           <input
             value={nickname}
             onChange={(e) => {
@@ -244,11 +280,10 @@ function Index() {
             placeholder="怎么称呼你？（可不填）"
             maxLength={12}
             style={{
-              width: 280,
-              padding: "11px 18px",
-              borderRadius: 6,
-              border: "1.5px solid rgba(154,107,58,.5)",
-              background: "rgba(255,255,255,.55)",
+              width: 220,
+              padding: "12px 18px",
+              border: "none",
+              background: "rgba(255,252,248,.72)",
               color: "#2c2418",
               fontFamily: serif,
               fontSize: 16,
@@ -257,13 +292,15 @@ function Index() {
               outline: "none",
             }}
           />
-        </div>
-        <Link to="/capture" className="lh-sweep" style={cta}>
+        </label>
+
+        <Link to="/capture" className="lh-sweep" style={{ ...cta, marginTop: 20 }}>
           开 始 · 煮 一 锅 人 生 <span style={{ fontSize: 18 }}>→</span>
         </Link>
+
         <div
           style={{
-            marginTop: 14,
+            marginTop: 16,
             fontFamily: serif,
             fontWeight: 700,
             fontSize: 18,

@@ -1,8 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { BASES, CONDIMENTS, INGREDIENTS, itemById } from "@/data/hotpot";
 import { Stage } from "@/components/Stage";
 import { YuanyangPot } from "@/components/hotpot-art";
+import { GestureGameLayer } from "@/components/GestureGameLayer";
+import { useGestureGame, type GestureFood } from "@/hooks/useGestureGame";
+import type { GestureState } from "@/hooks/useHandGesture";
 import { encodeSummary, type Pick, type SelectionSummary } from "@/lib/scoring";
 import { loadSession, saveSession } from "@/lib/session";
 
@@ -22,6 +25,9 @@ const serif = "'Noto Serif SC',serif";
 const BOIL_LINES = ["我们已经观察你三分钟。", "你以为自己在配火锅。", "其实，你正在构建人生。"];
 const TIMER_SECONDS = 60;
 const C = { cx: 640, cy: 412 };
+const GAME_W = 1280;
+const GAME_H = 720;
+const HOTPOT_R = 95;
 
 const btnPrimary: CSSProperties = {
   border: "none",
@@ -136,6 +142,52 @@ function Play() {
   const stepStartRef = useRef(Date.now());
   const orderRef = useRef(0);
 
+  // Gesture game state
+  const [gestureEnabled, setGestureEnabled] = useState(false);
+  const [showGestureGuide, setShowGestureGuide] = useState(true);
+  const [currentGesture, setCurrentGesture] = useState<GestureState>("none");
+
+  // 初始食材（环形排布，避开锅）
+  const initialFoods = useMemo<GestureFood[]>(
+    () =>
+      INGREDIENTS.map((it, i) => {
+        const a = -Math.PI / 2 + (i + 0.5) * ((2 * Math.PI) / INGREDIENTS.length);
+        return {
+          id: it.id,
+          name: it.name,
+          food: it.food,
+          kind: it.kind,
+          x: C.cx + 440 * Math.cos(a),
+          y: C.cy + 200 * Math.sin(a),
+          originX: C.cx + 440 * Math.cos(a),
+          originY: C.cy + 200 * Math.sin(a),
+          grabbed: false,
+        };
+      }),
+    [],
+  );
+
+  const {
+    foods: gestureFoods,
+    cursor: gestureCursor,
+    grabbedId,
+    moveCursor,
+    feedGesture,
+  } = useGestureGame({
+    initialFoods,
+    gameW: GAME_W,
+    gameH: GAME_H,
+    hotpotX: C.cx,
+    hotpotY: C.cy,
+    hotpotR: HOTPOT_R,
+    onDropped: ({ foodId, dropped }) => {
+      if (dropped) {
+        recordPick(foodId);
+        setIngs((prev) => (prev.includes(foodId) ? prev : [...prev, foodId]));
+      }
+    },
+  });
+
   useEffect(() => {
     stepStartRef.current = Date.now();
   }, [step]);
@@ -239,17 +291,37 @@ function Play() {
         />
       )}
       {step === "ingredients" && (
-        <IngStep
-          ings={ings}
-          meatPicked={meatPicked}
-          vegPicked={vegPicked}
-          leftColor={leftColor}
-          rightColor={rightColor}
-          secs={secs}
-          lifeLeft={lifeLeft}
-          onToggle={toggleIng}
-          onNext={() => setStep("sauce")}
-        />
+        <>
+          <IngStep
+            ings={ings}
+            meatPicked={meatPicked}
+            vegPicked={vegPicked}
+            leftColor={leftColor}
+            rightColor={rightColor}
+            secs={secs}
+            lifeLeft={lifeLeft}
+            onToggle={toggleIng}
+            onNext={() => setStep("sauce")}
+            gestureEnabled={gestureEnabled}
+            onToggleGesture={() => setGestureEnabled(!gestureEnabled)}
+          />
+          <GestureGameLayer
+            enabled={gestureEnabled && step === "ingredients"}
+            foods={gestureFoods}
+            grabbedId={grabbedId}
+            gesture={currentGesture}
+            cursor={gestureCursor}
+            onHandSample={({ x, y, detected, gesture }) => {
+              setCurrentGesture(gesture);
+              feedGesture(gesture);
+              if (detected) {
+                moveCursor(x * GAME_W, y * GAME_H);
+              }
+            }}
+            showGuide={showGestureGuide}
+            onCloseGuide={() => setShowGestureGuide(false)}
+          />
+        </>
       )}
       {step === "sauce" && (
         <SauceStep conds={conds} onToggle={toggleCond} onConfirm={() => setStep("boiling")} />
@@ -644,6 +716,8 @@ function IngStep({
   lifeLeft,
   onToggle,
   onNext,
+  gestureEnabled,
+  onToggleGesture,
 }: {
   ings: string[];
   meatPicked: number;
@@ -654,6 +728,8 @@ function IngStep({
   lifeLeft: number;
   onToggle: (id: string) => void;
   onNext: () => void;
+  gestureEnabled?: boolean;
+  onToggleGesture?: () => void;
 }) {
   const ring = INGREDIENTS.map((it, i) => {
     const a = -Math.PI / 2 + (i + 0.5) * ((2 * Math.PI) / 12);
@@ -862,6 +938,37 @@ function IngStep({
             }}
           />
         </div>
+      </div>
+
+      {/* 手势模式切换按钮 */}
+      <div style={{ position: "absolute", left: 34, top: 80 }}>
+        <button
+          onClick={() => onToggleGesture?.()}
+          style={{
+            background: gestureEnabled ? "#00aa00" : "rgba(0,0,0,0.5)",
+            border: "1.5px solid",
+            borderColor: gestureEnabled ? "#00ff00" : "rgba(154,123,74,.4)",
+            borderRadius: 8,
+            padding: "8px 16px",
+            color: "#fff",
+            fontSize: 13,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            transition: "all .2s ease",
+          }}
+        >
+          <span
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: "50%",
+              background: gestureEnabled ? "#00ff00" : "#888",
+            }}
+          />
+          手势模式 {gestureEnabled ? "ON" : "OFF"}
+        </button>
       </div>
 
       <div

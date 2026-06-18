@@ -416,3 +416,38 @@
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(180,56,43,0.5);
 }
+
+/* ===== 竖屏引导:portrait 且窄屏时覆盖整屏,提示横置 ===== */
+.lh-rotate-hint {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 32px;
+  text-align: center;
+  background: radial-gradient(circle at 50% 40%, #241a10, #120c06);
+}
+@media (orientation: portrait) and (max-width: 900px) {
+  .lh-rotate-hint {
+    display: flex;
+  }
+}
+@keyframes lhRotateDevice {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  45%,
+  55% {
+    transform: rotate(-90deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lh-rotate-hint svg {
+    animation: none;
+  }
+}

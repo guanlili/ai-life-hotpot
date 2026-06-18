@@ -24,6 +24,16 @@ const FEATURES = [
   { k: "现场状态", v: "好奇而专注" },
 ];
 
+// 摄像头错误按 DOMException 名称映射成中文 + 引导,取代裸露的英文技术信息
+function describeCameraError(e: unknown): string {
+  const name = (e as { name?: string })?.name ?? "";
+  if (name === "NotAllowedError" || name === "SecurityError")
+    return "摄像头未授权。请在浏览器地址栏允许摄像头权限后重试。";
+  if (name === "NotFoundError" || name === "OverconstrainedError") return "没有找到可用的摄像头。";
+  if (name === "NotReadableError") return "摄像头被其他程序占用，请关闭后重试。";
+  return "无法打开摄像头，可直接跳过这一步。";
+}
+
 const btn: CSSProperties = {
   border: "none",
   cursor: "pointer",
@@ -73,12 +83,14 @@ function Capture() {
   const [photo, setPhoto] = useState<string | null>(null);
   const [captured, setCaptured] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [requested, setRequested] = useState(false);
   const [reading, setReading] = useState(false);
   const [features, setFeatures] = useState<{ k: string; v: string }[]>(
     FEATURES.map((f) => ({ ...f })),
   );
 
   useEffect(() => {
+    if (!requested) return; // 进页不立即请求，等用户点「允许摄像头」
     let active = true;
     navigator.mediaDevices
       ?.getUserMedia({ video: { facingMode: "user", width: 640, height: 480 }, audio: false })
@@ -93,11 +105,11 @@ function Capture() {
           videoRef.current.play().catch(() => {});
         }
       })
-      .catch((e) => setError(e?.message ?? "无法打开摄像头"));
+      .catch((e) => setError(describeCameraError(e)));
     return () => {
       active = false;
     };
-  }, []);
+  }, [requested]);
 
   useEffect(() => () => stream?.getTracks().forEach((t) => t.stop()), [stream]);
 
@@ -222,6 +234,37 @@ function Capture() {
           >
             {error}
             <div style={{ marginTop: 8, opacity: 0.7 }}>可直接跳过这一步</div>
+          </div>
+        ) : !requested ? (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 16,
+              padding: 36,
+              textAlign: "center",
+            }}
+          >
+            <div
+              style={{
+                fontFamily: serif,
+                fontSize: 19,
+                color: "#f3e6c4",
+                letterSpacing: ".1em",
+              }}
+            >
+              AI 将读取你的气质特征
+            </div>
+            <div style={{ fontSize: 12, lineHeight: 1.7, color: "#d9c79a", maxWidth: 240 }}>
+              仅用于本次体验的人物特征参考，不做身份识别，不长期保存。
+            </div>
+            <button onClick={() => setRequested(true)} style={btn}>
+              允 许 摄 像 头
+            </button>
           </div>
         ) : (
           <>

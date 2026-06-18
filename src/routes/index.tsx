@@ -36,8 +36,9 @@ const cta: CSSProperties = {
   textDecoration: "none",
 };
 
-// 朱红印章
+// 朱红印章:按字数自适应排版(竖排/方阵),避免硬编码四字导致错位
 function Seal({ text, style }: { text: string; style?: CSSProperties }) {
+  const chars = [...text];
   return (
     <div
       style={{
@@ -48,20 +49,19 @@ function Seal({ text, style }: { text: string; style?: CSSProperties }) {
         color: "#f7ece2",
         fontFamily: serif,
         fontWeight: 900,
-        fontSize: 21,
+        fontSize: chars.length <= 2 ? 26 : chars.length === 3 ? 21 : 21,
         lineHeight: 1.05,
         display: "grid",
-        gridTemplateColumns: "1fr 1fr",
+        gridTemplateColumns: chars.length <= 2 ? "1fr" : "1fr 1fr",
         placeItems: "center",
         boxShadow: "0 4px 10px rgba(150,40,30,.35), inset 0 0 0 2px rgba(247,236,226,.35)",
         transform: "rotate(-6deg)",
         ...style,
       }}
     >
-      <span>{text[0]}</span>
-      <span>{text[1]}</span>
-      <span>{text[2]}</span>
-      <span>{text[3]}</span>
+      {chars.map((ch, i) => (
+        <span key={i}>{ch}</span>
+      ))}
     </div>
   );
 }

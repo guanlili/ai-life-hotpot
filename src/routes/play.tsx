@@ -8,6 +8,7 @@ import { useGestureGame, type GestureFood } from "@/hooks/useGestureGame";
 import type { GestureState } from "@/hooks/useHandGesture";
 import { encodeSummary, type Pick, type SelectionSummary } from "@/lib/scoring";
 import { loadSession, saveSession } from "@/lib/session";
+import { generateStory } from "@/lib/llm";
 
 type Step = "base" | "ingredients" | "sauce" | "boiling";
 
@@ -141,6 +142,8 @@ function Play() {
   const picksRef = useRef<Pick[]>([]);
   const stepStartRef = useRef(Date.now());
   const orderRef = useRef(0);
+  const [story, setStory] = useState<string>("");
+  const [storyLoading, setStoryLoading] = useState(false);
 
   // Gesture game state
   const [gestureEnabled, setGestureEnabled] = useState(false);
@@ -214,6 +217,30 @@ function Play() {
     return () => clearInterval(id);
   }, [step]);
 
+  // 进入沸腾时用大模型生成人生故事(后台进行，沸腾动画与推演等待共同遮盖；无 key/失败则留空)
+  useEffect(() => {
+    if (step !== "boiling") return;
+    const sess = loadSession();
+    const summary: SelectionSummary = {
+      base: bases,
+      ingredients: ings,
+      condiments: conds,
+      picks: picksRef.current,
+    };
+    let active = true;
+    setStoryLoading(true);
+    generateStory(summary, sess.photoFeatures)
+      .then((s) => {
+        if (active && s) setStory(s);
+      })
+      .finally(() => {
+        if (active) setStoryLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [step, bases, ings, conds]);
+
   const recordPick = (id: string) => {
     const now = Date.now();
     const item = itemById(id);
@@ -230,15 +257,11 @@ function Play() {
 
   const toggleBase = (id: string) => {
     if (bases.includes(id)) {
-      setBases(bases.filter((x) => x !== id));
-      return;
-    }
-    if (bases.length >= 2) {
-      setPickToast("锅底最多选择两个哦");
+      setBases([]);
       return;
     }
     recordPick(id);
-    setBases([...bases, id]);
+    setBases([id]);
   };
   const meatPicked = ings.filter(
     (id) => INGREDIENTS.find((i) => i.id === id)?.kind === "meat",
@@ -266,8 +289,9 @@ function Play() {
   const usedLife = ings.reduce((s, id) => s + (INGREDIENTS.find((i) => i.id === id)?.cost ?? 0), 0);
   const lifeLeft = Math.max(0, 100 - usedLife);
 
-  const leftColor = bases[0] ? baseById(bases[0])?.color : undefined;
-  const rightColor = bases[1] ? baseById(bases[1])?.color : undefined;
+  const selectedBase = bases[0] ? baseById(bases[0]) : undefined;
+  const baseImage = selectedBase?.image;
+  const baseColor = selectedBase?.color;
 
   const goReport = () => {
     const sess = loadSession();
@@ -277,6 +301,7 @@ function Play() {
       condiments: conds,
       picks: picksRef.current,
       nickname: sess.nickname,
+      story: story || undefined,
     };
     saveSession({ ...sess, ...summary });
     navigate({ to: "/report/$id", params: { id: encodeSummary(summary) } });
@@ -288,8 +313,8 @@ function Play() {
       {step === "base" && (
         <BaseStep
           bases={bases}
-          leftColor={leftColor}
-          rightColor={rightColor}
+          baseImage={baseImage}
+          baseColor={baseColor}
           onPick={toggleBase}
           onNext={() => setStep("ingredients")}
         />
@@ -297,15 +322,15 @@ function Play() {
       {step === "ingredients" && (
         <>
           <IngStep
-            ings={ings}
-            meatPicked={meatPicked}
-            vegPicked={vegPicked}
-            leftColor={leftColor}
-            rightColor={rightColor}
-            secs={secs}
-            lifeLeft={lifeLeft}
-            onToggle={toggleIng}
-            onNext={() => setStep("sauce")}
+             ings={ings}
+             meatPicked={meatPicked}
+             vegPicked={vegPicked}
+             baseImage={baseImage}
+             baseColor={baseColor}
+             secs={secs}
+             lifeLeft={lifeLeft}
+             onToggle={toggleIng}
+             onNext={() => setStep("sauce")}
             gestureEnabled={gestureEnabled}
             onToggleGesture={() => setGestureEnabled(!gestureEnabled)}
           />
@@ -334,8 +359,9 @@ function Play() {
         <BoilStep
           boilStep={boilStep}
           boilReady={boilReady}
-          leftColor={leftColor}
-          rightColor={rightColor}
+          storyLoading={storyLoading}
+          baseImage={baseImage}
+          baseColor={baseColor}
           onReport={goReport}
         />
       )}
@@ -351,17 +377,17 @@ function Play() {
   );
 }
 
-/* ============ 锅底(选两个 → 太极双鱼) ============ */
+/* ============ 锅底(选一个口味) ============ */
 function BaseStep({
   bases,
-  leftColor,
-  rightColor,
+  baseImage,
+  baseColor,
   onPick,
   onNext,
 }: {
   bases: string[];
-  leftColor?: string;
-  rightColor?: string;
+  baseImage?: string;
+  baseColor?: string;
   onPick: (id: string) => void;
   onNext: () => void;
 }) {
@@ -369,10 +395,10 @@ function BaseStep({
     <>
       <ScreenHead
         step="第一步"
-        title="择 锅 底 · 阴 阳 成 锅"
-        sub={`已选 ${bases.length} / 2 个 · 最多选两个，可不选`}
+        title="择 锅 底 · 定 基 调"
+        sub={`已选 ${bases.length} / 1 个 · 选一种口味，可不选`}
       />
-      <CenterPot size={340} left={leftColor} right={rightColor} />
+      <CenterPot size={340} baseImage={baseImage} baseColor={baseColor} />
       {BASES.map((b, i) => {
         const idx = bases.indexOf(b.id);
         const sel = idx >= 0;
@@ -415,26 +441,26 @@ function BaseStep({
                 width: 66,
                 height: 66,
                 borderRadius: "50%",
-                background: "radial-gradient(circle at 50% 34%,#f6efe0,#d6c6a0 78%)",
-                border: "1.5px solid rgba(90,68,42,.4)",
-                boxShadow: "0 8px 18px rgba(90,70,40,.2), inset 0 2px 6px rgba(255,255,255,.55)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
+                border: sel ? `2px solid ${b.color}` : "1.5px solid rgba(90,68,42,.4)",
+                boxShadow: sel
+                  ? `0 8px 18px rgba(90,70,40,.25), 0 0 0 3px ${b.color}33`
+                  : "0 8px 18px rgba(90,70,40,.2)",
+                overflow: "hidden",
                 position: "relative",
+                transition: "border-color .22s ease, box-shadow .22s ease",
               }}
             >
-              <div
+              <img
+                src={b.image}
+                alt={b.name}
                 style={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: "50%",
-                  background: b.color,
-                  boxShadow:
-                    "inset 0 -6px 12px rgba(0,0,0,.25), inset 0 4px 8px rgba(255,255,255,.25)",
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  display: "block",
                 }}
               />
-              {sel && <SelectBadge label={idx + 1} />}
+              {sel && <SelectBadge label="✓" />}
             </div>
             <div style={{ minWidth: 0, flex: 1, textAlign: leftSide ? "left" : "right" }}>
               {/* 只露锅底名字，藏起含义(tone/tagline),让选择更凭直觉 */}
@@ -714,8 +740,8 @@ function IngStep({
   ings,
   meatPicked,
   vegPicked,
-  leftColor,
-  rightColor,
+  baseImage,
+  baseColor,
   secs,
   lifeLeft,
   onToggle,
@@ -726,8 +752,8 @@ function IngStep({
   ings: string[];
   meatPicked: number;
   vegPicked: number;
-  leftColor?: string;
-  rightColor?: string;
+  baseImage?: string;
+  baseColor?: string;
   secs: number;
   lifeLeft: number;
   onToggle: (id: string) => void;
@@ -741,6 +767,7 @@ function IngStep({
   });
   const mm = Math.floor(secs / 60);
   const ss = String(secs % 60).padStart(2, "0");
+  const timesUp = secs <= 0;
 
   // 下锅飞入:仅"新增"食材时,从食材位置划弧飞向锅心(640,400)。
   const [flyers, setFlyers] = useState<{ key: number; food: string; x: number; y: number }[]>([]);
@@ -794,17 +821,18 @@ function IngStep({
             fontWeight: 700,
             fontSize: 22,
             letterSpacing: ".12em",
-            color: "#7a3228",
+            color: timesUp ? "#b4382b" : "#7a3228",
+            animation: timesUp ? "lhPulse 1.4s ease-in-out infinite" : undefined,
           }}
         >
-          一分 · {mm}:{ss}
+          {timesUp ? "时间到 · 随时开涮" : `一分 · ${mm}:${ss}`}
         </div>
         <div style={{ fontSize: 12, color: "#8a6a44", marginTop: 3, letterSpacing: ".1em" }}>
           荤 {meatPicked} · 素 {vegPicked} · 多少不限，可不选
         </div>
       </div>
 
-      <CenterPot size={340} left={leftColor} right={rightColor} bits={ings} />
+      <CenterPot size={340} baseImage={baseImage} baseColor={baseColor} bits={ings} />
 
       {/* 荤(右) / 素(左) 分区提示 */}
       <SideTag char="荤" sub="MEAT" x={904} count={meatPicked} tone="#9a3a2c" />
@@ -1028,9 +1056,10 @@ function IngStep({
             padding: "10px 38px",
             fontSize: 16,
             boxShadow: "0 8px 18px rgba(150,40,30,.26)",
+            animation: timesUp ? "lhRingPulse 1.6s ease-in-out infinite" : undefined,
           }}
         >
-          开 始 涮 人 生
+          {timesUp ? "时 间 到 · 开 始 涮" : "开 始 涮 人 生"}
         </button>
       </div>
     </>
@@ -1039,119 +1068,18 @@ function IngStep({
 
 /* ============ 蘸料 ============ */
 function CondimentVisual({ id, large = false }: { id: string; large?: boolean }) {
-  const scale = large ? 1.28 : 1;
-  const dot = (key: string, style: CSSProperties) => (
-    <span key={key} style={{ position: "absolute", ...style }} />
-  );
-  const bits: ReactNode[] = [];
-
-  if (id === "garlic") {
-    for (let i = 0; i < 18; i++) {
-      bits.push(
-        dot(`g${i}`, {
-          left: 18 + ((i * 17) % 44),
-          top: 18 + ((i * 23) % 44),
-          width: 7 * scale,
-          height: 6 * scale,
-          borderRadius: "45%",
-          background: i % 3 ? "#f1ead2" : "#d8cda9",
-          boxShadow: "inset -1px -1px 1px rgba(130,110,70,.28)",
-          transform: `rotate(${i * 31}deg)`,
-        }),
-      );
-    }
-  } else if (id === "cilantro" || id === "scallion") {
-    const colors =
-      id === "cilantro" ? ["#287a38", "#3f9a4a", "#76b85b"] : ["#4a9a44", "#91c96a", "#e3efd0"];
-    for (let i = 0; i < 20; i++) {
-      bits.push(
-        dot(`${id}${i}`, {
-          left: 15 + ((i * 19) % 50),
-          top: 17 + ((i * 29) % 46),
-          width: (id === "scallion" ? 12 : 11) * scale,
-          height: (id === "scallion" ? 4 : 6) * scale,
-          borderRadius: id === "scallion" ? 8 : "65% 35% 65% 35%",
-          background: colors[i % colors.length],
-          transform: `rotate(${(i * 37) % 180}deg)`,
-          boxShadow: "0 1px 1px rgba(0,0,0,.18)",
-        }),
-      );
-    }
-  } else if (id === "chili" || id === "chilioil") {
-    for (let i = 0; i < 13; i++) {
-      bits.push(
-        dot(`c${i}`, {
-          left: 16 + ((i * 21) % 48),
-          top: 15 + ((i * 27) % 50),
-          width: 13 * scale,
-          height: 8 * scale,
-          borderRadius: "50%",
-          background: i % 2 ? "#d83b21" : "#a92016",
-          border: "1px solid rgba(255,185,120,.42)",
-          transform: `rotate(${i * 29}deg)`,
-          boxShadow: "inset 0 0 0 2px rgba(90,20,10,.18)",
-        }),
-      );
-    }
-    if (id === "chilioil") {
-      bits.unshift(
-        dot("oil", {
-          inset: 10,
-          borderRadius: "50%",
-          background:
-            "radial-gradient(circle at 40% 34%,rgba(255,155,64,.86),rgba(180,45,24,.9) 64%,rgba(120,24,16,.92))",
-          filter: "saturate(1.1)",
-        }),
-      );
-    }
-  } else if (id === "sesame" || id === "peanut") {
-    for (let i = 0; i < (id === "sesame" ? 28 : 18); i++) {
-      bits.push(
-        dot(`${id}${i}`, {
-          left: 15 + ((i * 13) % 52),
-          top: 16 + ((i * 23) % 48),
-          width: (id === "sesame" ? 4 : 9) * scale,
-          height: (id === "sesame" ? 7 : 7) * scale,
-          borderRadius: id === "sesame" ? "50%" : "40%",
-          background:
-            id === "sesame" ? (i % 3 ? "#ead9a6" : "#fff1c8") : i % 2 ? "#c48748" : "#e0b477",
-          transform: `rotate(${i * 41}deg)`,
-          boxShadow: "0 1px 1px rgba(0,0,0,.2)",
-        }),
-      );
-    }
-  } else {
-    const sauceMap: Record<string, string> = {
-      oyster: "radial-gradient(circle at 38% 30%,#8a6239,#4d2d18 66%,#2b170d)",
-      vinegar: "radial-gradient(circle at 40% 32%,#7b3a1b,#3f1f12 72%,#1d0d08)",
-      sesameoil: "radial-gradient(circle at 38% 30%,#ffd068,#d89b23 64%,#9b6416)",
-    };
-    bits.push(
-      dot(id, {
-        inset: 9,
-        borderRadius: "50%",
-        background: sauceMap[id],
-        boxShadow: "inset 0 5px 12px rgba(255,255,255,.18), inset 0 -8px 16px rgba(0,0,0,.24)",
-      }),
-    );
-    bits.push(
-      dot(`${id}-shine`, {
-        left: 24,
-        top: 18,
-        width: 26,
-        height: 10,
-        borderRadius: "50%",
-        background: "rgba(255,255,255,.22)",
-        filter: "blur(2px)",
-        transform: "rotate(-12deg)",
-      }),
-    );
-  }
-
+  const condiment = CONDIMENTS.find((c) => c.id === id);
+  if (!condiment) return null;
   return (
-    <div style={{ position: "absolute", inset: 0, overflow: "hidden", borderRadius: "50%" }}>
-      {bits}
-    </div>
+    <img
+      src={condiment.image}
+      alt={condiment.name}
+      style={{
+        width: "100%",
+        height: "100%",
+        objectFit: "cover",
+      }}
+    />
   );
 }
 
@@ -1372,16 +1300,36 @@ function SauceStep({
 function BoilStep({
   boilStep,
   boilReady,
-  leftColor,
-  rightColor,
+  storyLoading,
+  baseImage,
+  baseColor,
   onReport,
 }: {
   boilStep: number;
   boilReady: boolean;
-  leftColor?: string;
-  rightColor?: string;
+  storyLoading: boolean;
+  baseImage?: string;
+  baseColor?: string;
   onReport: () => void;
 }) {
+  const [tipIndex, setTipIndex] = useState(0);
+
+  const tips = [
+    "正在融合锅底与食材风味...",
+    "正在计算 100 金币人生分配...",
+    "正在结合火锅推演人生哲理...",
+    "AI 观察员正在为您撰写命运判词...",
+    "正在整合你的命运故事轨迹..."
+  ];
+
+  useEffect(() => {
+    if (!storyLoading) return;
+    const timer = setInterval(() => {
+      setTipIndex((prev) => (prev + 1) % tips.length);
+    }, 2200);
+    return () => clearInterval(timer);
+  }, [storyLoading]);
+
   return (
     <>
       <div
@@ -1446,7 +1394,20 @@ function BoilStep({
             />
           ))}
         </div>
-        <YuanyangPot left={leftColor} right={rightColor} />
+        {baseImage ? (
+          <div style={{
+            position: "absolute",
+            inset: 0,
+            borderRadius: "50%",
+            overflow: "hidden",
+            border: "4px solid #9a7b4a",
+            boxShadow: "0 0 0 6px rgba(90,70,40,.2), inset 0 0 30px rgba(0,0,0,.15)",
+          }}>
+            <img src={baseImage} alt="锅底" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+          </div>
+        ) : (
+          <YuanyangPot />
+        )}
         <div
           style={{
             position: "absolute",
@@ -1549,6 +1510,38 @@ function BoilStep({
               }}
             />
             开火沸腾中 · AI 正在整合你的选择…
+          </div>
+        ) : storyLoading ? (
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 12,
+              color: "#caa05a",
+              fontSize: 14,
+              letterSpacing: ".2em",
+            }}
+          >
+            <span
+              style={{
+                width: 18,
+                height: 18,
+                border: "2px solid rgba(202,160,90,.3)",
+                borderTopColor: "#caa05a",
+                borderRadius: "50%",
+                animation: "lhSpin .8s linear infinite",
+                display: "inline-block",
+              }}
+            />
+            <span
+              key={tipIndex}
+              style={{
+                animation: "lhFade 0.5s ease both",
+                display: "inline-block",
+              }}
+            >
+              {tips[tipIndex]}
+            </span>
           </div>
         ) : (
           <button
@@ -1822,13 +1815,13 @@ function potIngredientStyle(food: string, tint: string, i: number): CSSPropertie
 
 function CenterPot({
   size,
-  left,
-  right,
+  baseImage,
+  baseColor,
   bits,
 }: {
   size: number;
-  left?: string;
-  right?: string;
+  baseImage?: string;
+  baseColor?: string;
   bits?: string[];
 }) {
   return (
@@ -1843,7 +1836,33 @@ function CenterPot({
           height: size,
         }}
       >
-        <YuanyangPot left={left} right={right} />
+        {baseImage ? (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              borderRadius: "50%",
+              overflow: "hidden",
+              border: `4px solid ${baseColor ?? "#9a7b4a"}`,
+              boxShadow: `0 0 0 6px ${baseColor ? baseColor + "33" : "rgba(90,70,40,.2)"}, 0 12px 32px rgba(60,40,20,.25), inset 0 0 20px rgba(0,0,0,.1)`,
+              transition: "border-color .3s ease, box-shadow .3s ease",
+            }}
+          >
+            <img
+              src={baseImage}
+              alt="锅底"
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                display: "block",
+                transition: "opacity .3s ease",
+              }}
+            />
+          </div>
+        ) : (
+          <YuanyangPot />
+        )}
         {bits && bits.length > 0 && (
           <>
             {bits.map((id, i) => {

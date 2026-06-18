@@ -3,8 +3,9 @@ import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import QRCode from "qrcode";
 import { Stage } from "@/components/Stage";
 import { DIM_LABEL, itemById } from "@/data/hotpot";
-import { decodeSummary } from "@/lib/scoring";
+import { decodeSummary, encodeSummary } from "@/lib/scoring";
 import { buildReport } from "@/lib/mockReport";
+import { generateStory } from "@/lib/llm";
 
 export const Route = createFileRoute("/report/$id")({
   head: ({ params }) => ({
@@ -104,25 +105,65 @@ function parseStory(raw: string): {
 function Report() {
   const { id } = Route.useParams();
   const summary = useMemo(() => decodeSummary(id), [id]);
+  const report = useMemo(() => (summary ? buildReport(summary) : null), [summary]);
+
   const [qr, setQr] = useState<string | null>(null);
   const [isFlipped, setIsFlipped] = useState(false);
+  const [story, setStory] = useState<string>("");
+  const [storyLoading, setStoryLoading] = useState(false);
+  const [storyError, setStoryError] = useState(false);
+
+  const parsed = useMemo(() => parseStory(story), [story]);
+
+  const fetchStory = async () => {
+    if (!summary) return;
+    setStoryLoading(true);
+    setStoryError(false);
+    try {
+      const s = await generateStory(summary, "");
+      if (s) {
+        setStory(s);
+      } else {
+        setStoryError(true);
+      }
+    } catch {
+      setStoryError(true);
+    } finally {
+      setStoryLoading(false);
+    }
+  };
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    QRCode.toDataURL(window.location.href, {
+    if (summary) {
+      if (summary.story) {
+        setStory(summary.story);
+        setStoryError(false);
+      } else {
+        // 先回落本地静态模板故事，免去用户等待；再在后台异步推演并替换
+        if (report) {
+          setStory(report.story);
+        }
+        fetchStory();
+      }
+    }
+  }, [summary, report]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !summary) return;
+    // 二维码走精简链接(剔除 AI 故事)，避免 URL 过长导致模块过密、手机扫不出。
+    // 扫码者进入报告页后，选择/金币分布一致，故事会回落模板或后台重新生成。
+    const liteId = encodeSummary({ ...summary, story: undefined });
+    const shareUrl = window.location.origin + window.location.pathname.replace(/[^/]+$/, liteId);
+    QRCode.toDataURL(shareUrl, {
       width: 320,
       margin: 1,
       color: { dark: "#1c140c", light: "#ffffff" },
     })
       .then(setQr)
       .catch(() => setQr(null));
-  }, [id]);
+  }, [id, summary]);
 
-  const report = useMemo(() => (summary ? buildReport(summary) : null), [summary]);
   if (!summary || !report) return <ReportError />;
-  // 优先用生成时烤进链接的 AI 故事;没有则回落模板
-  const storyText = summary.story ?? report.story;
-  const parsed = parseStory(storyText);
   const chosenNames = [...summary.base, ...summary.ingredients, ...summary.condiments]
     .map((id) => itemById(id)?.name)
     .filter(Boolean)
@@ -427,9 +468,24 @@ function Report() {
                       color: "#9a6b3a",
                       marginBottom: 6,
                       fontWeight: 600,
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
                     }}
                   >
-                    A I  观  察  员  评  价
+                    <span>A I  观  察  员  评  价</span>
+                    {storyLoading && (
+                      <span
+                        style={{
+                          fontSize: 9,
+                          color: "#caa05a",
+                          animation: "lhPulse 1.5s infinite",
+                          fontWeight: "normal",
+                        }}
+                      >
+                        ✨ AI正在精修命运哲理...
+                      </span>
+                    )}
                   </div>
                   <div
                     style={{
@@ -621,7 +677,37 @@ function Report() {
                     whiteSpace: "pre-line",
                   }}
                 >
-                  {parsed.narrative || storyText}
+                  {storyLoading && (
+                    <div
+                      style={{
+                        padding: "6px 10px",
+                        background: "rgba(202,160,90,.06)",
+                        border: "1px dashed rgba(202,160,90,.25)",
+                        borderRadius: 6,
+                        fontSize: 11,
+                        color: "#9a6b3a",
+                        marginBottom: 10,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        animation: "lhPulse 1.5s infinite",
+                      }}
+                    >
+                      <span
+                        style={{
+                          width: 10,
+                          height: 10,
+                          border: "1.5px solid rgba(202,160,90,.3)",
+                          borderTopColor: "#caa05a",
+                          borderRadius: "50%",
+                          animation: "lhSpin .8s linear infinite",
+                          display: "inline-block",
+                        }}
+                      />
+                      <span>大模型正在为您深度推演故事细节，稍后将自动无缝升级...</span>
+                    </div>
+                  )}
+                  {parsed.narrative || story}
                 </div>
 
                 {/* 底部: 扫码保存 + 按钮 */}

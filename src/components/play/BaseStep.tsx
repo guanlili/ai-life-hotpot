@@ -21,17 +21,27 @@ export function BaseStep({
 
   if (isPortrait) {
     return (
-      <div style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        width: "100%",
-        padding: "0 16px 120px",
-        boxSizing: "border-box",
-      }}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          width: "100%",
+          padding: "0 16px 120px",
+          boxSizing: "border-box",
+        }}
+      >
         <div style={{ textAlign: "center", marginTop: 20, marginBottom: 20 }}>
           <div style={{ fontSize: 12, letterSpacing: ".3em", color: "#9a6b3a" }}>第一步</div>
-          <div style={{ fontFamily: serif, fontWeight: 700, fontSize: 24, color: "#2c2418", marginTop: 4 }}>
+          <div
+            style={{
+              fontFamily: serif,
+              fontWeight: 700,
+              fontSize: 24,
+              color: "#2c2418",
+              marginTop: 4,
+            }}
+          >
             择锅底 · 定基调
           </div>
           <div style={{ fontSize: 11, color: "#8a6a44", marginTop: 6 }}>
@@ -70,26 +80,36 @@ export function BaseStep({
                   background: sel
                     ? "linear-gradient(180deg,rgba(247,240,223,.92),rgba(236,225,201,.88))"
                     : "rgba(247,240,223,.56)",
-                  border: sel ? "1.5px solid rgba(180,56,43,.72)" : "1px solid rgba(154,123,74,.28)",
+                  border: sel
+                    ? "1.5px solid rgba(180,56,43,.72)"
+                    : "1px solid rgba(154,123,74,.28)",
                   boxShadow: sel
                     ? "0 10px 22px rgba(120,70,40,.12)"
                     : "0 6px 14px rgba(90,70,40,.06)",
                 }}
               >
-                <div style={{
-                  flex: "none",
-                  width: 50,
-                  height: 50,
-                  borderRadius: "50%",
-                  border: sel ? `2px solid ${b.color}` : "1.5px solid rgba(90,68,42,.4)",
-                  overflow: "hidden",
-                  position: "relative",
-                }}>
-                  <img src={b.image} alt={b.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <div
+                  style={{
+                    flex: "none",
+                    width: 50,
+                    height: 50,
+                    borderRadius: "50%",
+                    border: sel ? `2px solid ${b.color}` : "1.5px solid rgba(90,68,42,.4)",
+                    overflow: "hidden",
+                    position: "relative",
+                  }}
+                >
+                  <img
+                    src={b.image}
+                    alt={b.name}
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  />
                   {sel && <SelectBadge label="✓" />}
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: serif, fontWeight: 800, fontSize: 18, color: "#2c2418" }}>
+                  <div
+                    style={{ fontFamily: serif, fontWeight: 800, fontSize: 18, color: "#2c2418" }}
+                  >
                     {b.name}
                   </div>
                 </div>
@@ -98,16 +118,18 @@ export function BaseStep({
           })}
         </div>
 
-        <div style={{
-          position: "fixed",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          padding: "16px 20px 24px",
-          background: "linear-gradient(180deg, transparent, #f4eddd 25%)",
-          textAlign: "center",
-          zIndex: 10,
-        }}>
+        <div
+          style={{
+            position: "fixed",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            padding: "16px 20px 24px",
+            background: "linear-gradient(180deg, transparent, #f4eddd 25%)",
+            textAlign: "center",
+            zIndex: 10,
+          }}
+        >
           <button onClick={onNext} style={{ ...btnPrimary, width: "100%", maxWidth: 300 }}>
             下一步 · 配食材
           </button>
@@ -213,5 +235,3 @@ export function BaseStep({
     </>
   );
 }
-
-

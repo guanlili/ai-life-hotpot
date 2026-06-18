@@ -71,40 +71,56 @@ export function IngStep({
     });
 
     return (
-      <div style={gestureEnabled ? {
-        position: "absolute",
-        left: 0,
-        right: 0,
-        top: 76,
-        bottom: 0,
-        width: "100%",
-        height: "calc(100% - 76px)",
-        overflow: "hidden",
-        boxSizing: "border-box",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-      } : {
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        width: "100%",
-        padding: "0 16px 130px",
-        boxSizing: "border-box",
-        position: "relative",
-      }}>
+      <div
+        style={
+          gestureEnabled
+            ? {
+                position: "absolute",
+                left: 0,
+                right: 0,
+                top: 76,
+                bottom: 0,
+                width: "100%",
+                height: "calc(100% - 76px)",
+                overflow: "hidden",
+                boxSizing: "border-box",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }
+            : {
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                width: "100%",
+                padding: "0 16px 130px",
+                boxSizing: "border-box",
+                position: "relative",
+              }
+        }
+      >
         <div style={{ textAlign: "center", marginTop: 20, marginBottom: 15 }}>
           <div style={{ fontSize: 12, letterSpacing: ".3em", color: "#9a6b3a" }}>第二步</div>
-          <div style={{ fontFamily: serif, fontWeight: 700, fontSize: 24, color: "#2c2418", marginTop: 4 }}>
+          <div
+            style={{
+              fontFamily: serif,
+              fontWeight: 700,
+              fontSize: 24,
+              color: "#2c2418",
+              marginTop: 4,
+            }}
+          >
             配食材 · 涮一锅人生
           </div>
-          <div style={{
-            fontFamily: serif,
-            fontWeight: 700,
-            fontSize: 18,
-            color: timesUp ? "#b4382b" : "#7a3228",
-            marginTop: 6,
-          }}>
+          <div
+            style={{
+              fontFamily: serif,
+              fontWeight: 700,
+              fontSize: 18,
+              color: timesUp ? "#b4382b" : "#7a3228",
+              marginTop: 6,
+            }}
+          >
             {timesUp ? "时间到 · 随时开涮" : `一分 · ${mm}:${ss}`}
           </div>
           <div style={{ fontSize: 11, color: "#8a6a44", marginTop: 4 }}>
@@ -145,7 +161,13 @@ export function IngStep({
 
         {gestureEnabled ? (
           <>
-            <CenterPot size={220} baseImage={baseImage} baseColor={baseColor} bits={ings} yOffset={260} />
+            <CenterPot
+              size={220}
+              baseImage={baseImage}
+              baseColor={baseColor}
+              bits={ings}
+              yOffset={260}
+            />
             {portraitRing.map(({ it, x, y }) => {
               const sel = ings.includes(it.id);
               return (
@@ -170,7 +192,8 @@ export function IngStep({
                       borderRadius: "50%",
                       background: "radial-gradient(circle at 50% 34%,#f6efe0,#d6c6a0 78%)",
                       border: "1.5px solid rgba(90,68,42,.4)",
-                      boxShadow: "0 6px 12px rgba(90,70,40,.15), inset 0 1px 3px rgba(255,255,255,.5)",
+                      boxShadow:
+                        "0 6px 12px rgba(90,70,40,.15), inset 0 1px 3px rgba(255,255,255,.5)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -210,7 +233,13 @@ export function IngStep({
           <>
             {/* Center Pot Container */}
             <div style={{ height: 240, position: "relative", width: "100%" }}>
-              <CenterPot size={220} baseImage={baseImage} baseColor={baseColor} bits={ings} yOffset={potY} />
+              <CenterPot
+                size={220}
+                baseImage={baseImage}
+                baseColor={baseColor}
+                bits={ings}
+                yOffset={potY}
+              />
             </div>
 
             {/* Ingredients Grid */}
@@ -267,20 +296,24 @@ export function IngStep({
                       <RealFoodVisual food={it.food} size={44} />
                       {sel && <SelectBadge label="✓" />}
                     </div>
-                    <div style={{
-                      marginTop: 4,
-                      fontFamily: serif,
-                      fontWeight: 700,
-                      fontSize: 13,
-                      color: "#2c2418",
-                    }}>
+                    <div
+                      style={{
+                        marginTop: 4,
+                        fontFamily: serif,
+                        fontWeight: 700,
+                        fontSize: 13,
+                        color: "#2c2418",
+                      }}
+                    >
                       {it.name}
                     </div>
-                    <div style={{
-                      fontSize: 9,
-                      fontWeight: 600,
-                      color: it.kind === "meat" ? "#9a3a2c" : "#4f6a2e",
-                    }}>
+                    <div
+                      style={{
+                        fontSize: 9,
+                        fontWeight: 600,
+                        color: it.kind === "meat" ? "#9a3a2c" : "#4f6a2e",
+                      }}
+                    >
                       −{it.cost}金
                     </div>
                   </div>
@@ -316,26 +349,56 @@ export function IngStep({
         )}
 
         {/* Gold stats & actions */}
-        <div style={{
-          position: gestureEnabled ? "absolute" : "fixed",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          padding: "12px 20px 24px",
-          background: "linear-gradient(180deg, transparent, #f4eddd 25%)",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 12,
-          zIndex: 10,
-        }}>
+        <div
+          style={{
+            position: gestureEnabled ? "absolute" : "fixed",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            padding: "12px 20px 24px",
+            background: "linear-gradient(180deg, transparent, #f4eddd 25%)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 12,
+            zIndex: 10,
+          }}
+        >
           {/* Life Left Bar */}
-          <div style={{ display: "flex", alignItems: "center", justifySelf: "stretch", width: "100%", maxWidth: 300, gap: 10 }}>
-            <span style={{ fontSize: 12, color: "#9a6b3a", whiteSpace: "nowrap" }}>剩余人生金币</span>
-            <div style={{ flex: 1, height: 6, borderRadius: 3, background: "#cdbf9f", overflow: "hidden" }}>
-              <div style={{ width: `${lifeLeft}%`, height: "100%", background: "#b4382b", transition: "width .3s ease" }} />
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifySelf: "stretch",
+              width: "100%",
+              maxWidth: 300,
+              gap: 10,
+            }}
+          >
+            <span style={{ fontSize: 12, color: "#9a6b3a", whiteSpace: "nowrap" }}>
+              剩余人生金币
+            </span>
+            <div
+              style={{
+                flex: 1,
+                height: 6,
+                borderRadius: 3,
+                background: "#cdbf9f",
+                overflow: "hidden",
+              }}
+            >
+              <div
+                style={{
+                  width: `${lifeLeft}%`,
+                  height: "100%",
+                  background: "#b4382b",
+                  transition: "width .3s ease",
+                }}
+              />
             </div>
-            <span style={{ fontSize: 13, fontFamily: serif, fontWeight: 700, color: "#2c2418" }}>{lifeLeft}/100</span>
+            <span style={{ fontSize: 13, fontFamily: serif, fontWeight: 700, color: "#2c2418" }}>
+              {lifeLeft}/100
+            </span>
           </div>
           <button onClick={onNext} style={{ ...btnPrimary, width: "100%", maxWidth: 300 }}>
             下一步 · 调蘸料
@@ -630,4 +693,3 @@ export function IngStep({
     </>
   );
 }
-

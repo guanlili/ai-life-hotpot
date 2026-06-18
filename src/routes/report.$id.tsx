@@ -80,14 +80,14 @@ function parseStory(raw: string): {
   const full = (raw ?? "").trim();
   if (!full) return { title: null, slogan: null, observer: null, narrative: "" };
   // 观察员:【AI观察员评价】 或 "AI观察员评价：" 之后的内容，兼容各种 Markdown 标记（如 ###, ** 等）和空格
-  const obsRe = /[#\s*_\-]*【?\s*AI\s*观\s*察\s*员\s*评\s*价\s*】?[\s*_\-]*[：:]?[\s*_\-]*/i;
+  const obsRe = /[#\s*_-]*【?\s*AI\s*观\s*察\s*员\s*评\s*价\s*】?[\s*_-]*[：:]?[\s*_-]*/i;
   const obsIdx = full.search(obsRe);
   let observer: string | null = null;
   let body = full;
   if (obsIdx >= 0) {
     observer = full.slice(obsIdx).replace(obsRe, "").trim();
     // 进一步清理 observer 开头可能残留的冒号、星号、空格等 markdown 痕迹
-    observer = observer.replace(/^[:：\s*_\-]+/, "").trim();
+    observer = observer.replace(/^[:：\s*_-]+/, "").trim();
     body = full.slice(0, obsIdx).trim();
   }
   // 标题:第一个《...》
@@ -98,10 +98,13 @@ function parseStory(raw: string): {
   const slogan = sloganMatch ? sloganMatch[0] : null;
   // 正文去掉明显的结构标签行和各种 Markdown 标题前缀
   const narrative = body
-    .replace(/^[ \t#*_\-]*你的命运火锅[ \t*_\-]*\r?\n?/gim, "")
-    .replace(/^[ \t#*_\-]*标题[ \t*_\-]*[：:][ \t*_\-]*\r?\n?/gim, "")
-    .replace(/^[ \t#*_\-]*一句命运总结[^\n]*\r?\n?/gim, "")
-    .replace(/^[ \t#*_\-]*(人生故事|命运故事|故事详情|叙事故事)[ \t*_\-]*[：:]?[ \t*_\-]*\r?\n?/gim, "")
+    .replace(/^[ \t#*_-]*你的命运火锅[ \t*_-]*\r?\n?/gim, "")
+    .replace(/^[ \t#*_-]*标题[ \t*_-]*[：:][ \t*_-]*\r?\n?/gim, "")
+    .replace(/^[ \t#*_-]*一句命运总结[^\n]*\r?\n?/gim, "")
+    .replace(
+      /^[ \t#*_-]*(人生故事|命运故事|故事详情|叙事故事)[ \t*_-]*[：:]?[ \t*_-]*\r?\n?/gim,
+      "",
+    )
     .trim();
   return { title, slogan, observer, narrative: narrative || body };
 }
@@ -110,8 +113,15 @@ function parseItalic(content: string): ReactNode[] {
   const italicRegex = /(\*.*?\*|_.*?_)/g;
   const parts = content.split(italicRegex);
   return parts.map((part, i) => {
-    if ((part.startsWith("*") && part.endsWith("*")) || (part.startsWith("_") && part.endsWith("_"))) {
-      return <em key={i} style={{ fontStyle: "italic" }}>{part.slice(1, -1)}</em>;
+    if (
+      (part.startsWith("*") && part.endsWith("*")) ||
+      (part.startsWith("_") && part.endsWith("_"))
+    ) {
+      return (
+        <em key={i} style={{ fontStyle: "italic" }}>
+          {part.slice(1, -1)}
+        </em>
+      );
     }
     return part;
   });
@@ -121,8 +131,15 @@ function parseInlineElements(content: string): ReactNode[] {
   const boldRegex = /(\*\*.*?\*\*|__.*?__)/g;
   const parts = content.split(boldRegex);
   return parts.flatMap((part, i) => {
-    if ((part.startsWith("**") && part.endsWith("**")) || (part.startsWith("__") && part.endsWith("__"))) {
-      return <strong key={i} style={{ fontWeight: 700, color: "#1c140c" }}>{parseItalic(part.slice(2, -2))}</strong>;
+    if (
+      (part.startsWith("**") && part.endsWith("**")) ||
+      (part.startsWith("__") && part.endsWith("__"))
+    ) {
+      return (
+        <strong key={i} style={{ fontWeight: 700, color: "#1c140c" }}>
+          {parseItalic(part.slice(2, -2))}
+        </strong>
+      );
     }
     return parseItalic(part);
   });
@@ -147,7 +164,7 @@ function RichText({ text, style }: { text: string; style?: CSSProperties }) {
           }}
         >
           {listItems}
-        </ul>
+        </ul>,
       );
       listItems = [];
     }
@@ -184,7 +201,7 @@ function RichText({ text, style }: { text: string; style?: CSSProperties }) {
           }}
         >
           {parseInlineElements(displayContent)}
-        </div>
+        </div>,
       );
       return;
     }
@@ -202,14 +219,19 @@ function RichText({ text, style }: { text: string; style?: CSSProperties }) {
           }}
         >
           {parseInlineElements(content)}
-        </li>
+        </li>,
       );
       return;
     }
 
     flushList(index);
 
-    const isNodeHeader = trimmed.startsWith("【命运节点") || trimmed.startsWith("【AI观察员评价】") || (trimmed.startsWith("【") && trimmed.endsWith("】")) || (trimmed.includes("岁") && (trimmed.includes("·") || trimmed.includes("：") || trimmed.includes(":")));
+    const isNodeHeader =
+      trimmed.startsWith("【命运节点") ||
+      trimmed.startsWith("【AI观察员评价】") ||
+      (trimmed.startsWith("【") && trimmed.endsWith("】")) ||
+      (trimmed.includes("岁") &&
+        (trimmed.includes("·") || trimmed.includes("：") || trimmed.includes(":")));
 
     if (isNodeHeader) {
       blocks.push(
@@ -226,7 +248,7 @@ function RichText({ text, style }: { text: string; style?: CSSProperties }) {
           }}
         >
           {parseInlineElements(trimmed.replace(/^【\s*/, "").replace(/\s*】$/, ""))}
-        </div>
+        </div>,
       );
     } else {
       blocks.push(
@@ -238,7 +260,7 @@ function RichText({ text, style }: { text: string; style?: CSSProperties }) {
           }}
         >
           {parseInlineElements(trimmed)}
-        </p>
+        </p>,
       );
     }
   });
@@ -371,35 +393,41 @@ function Report() {
   return (
     <Stage>
       <div
-        style={isPortrait ? {
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          width: "100%",
-          height: "100%",
-          padding: "16px 10px",
-          boxSizing: "border-box",
-          animation: "lhFade .5s ease both",
-        } : {
-          position: "absolute",
-          inset: 0,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 54,
-          animation: "lhFade .5s ease both",
-        }}
+        style={
+          isPortrait
+            ? {
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                width: "100%",
+                height: "100%",
+                padding: "16px 10px",
+                boxSizing: "border-box",
+                animation: "lhFade .5s ease both",
+              }
+            : {
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 54,
+                animation: "lhFade .5s ease both",
+              }
+        }
       >
         {/* 3D 翻面人生火锅报告卡 */}
-        <div style={{
-          perspective: 1000,
-          width: isPortrait ? "calc(100vw - 32px)" : 460,
-          maxWidth: 460,
-          height: isPortrait ? "calc(100vh - 48px)" : 668,
-          maxHeight: 668,
-          position: "relative",
-        }}>
+        <div
+          style={{
+            perspective: 1000,
+            width: isPortrait ? "calc(100vw - 32px)" : 460,
+            maxWidth: 460,
+            height: isPortrait ? "calc(100vh - 48px)" : 668,
+            maxHeight: 668,
+            position: "relative",
+          }}
+        >
           <div
             style={{
               width: "100%",
@@ -451,16 +479,30 @@ function Report() {
               >
                 <div>
                   {summary.nickname && (
-                    <div style={{ fontSize: 12, color: "#9a6b3a", letterSpacing: ".1em", marginBottom: 5 }}>
+                    <div
+                      style={{
+                        fontSize: 12,
+                        color: "#9a6b3a",
+                        letterSpacing: ".1em",
+                        marginBottom: 5,
+                      }}
+                    >
                       致 「{summary.nickname}」
                     </div>
                   )}
                   <div
-                    style={{ fontFamily: serif, fontWeight: 900, fontSize: isPortrait ? 20 : 23, letterSpacing: ".12em" }}
+                    style={{
+                      fontFamily: serif,
+                      fontWeight: 900,
+                      fontSize: isPortrait ? 20 : 23,
+                      letterSpacing: ".12em",
+                    }}
                   >
                     人生火锅报告
                   </div>
-                  <div style={{ fontSize: 10, letterSpacing: ".4em", color: "#9a6b3a", marginTop: 3 }}>
+                  <div
+                    style={{ fontSize: 10, letterSpacing: ".4em", color: "#9a6b3a", marginTop: 3 }}
+                  >
                     LIFE HOTPOT REPORT
                   </div>
                 </div>
@@ -497,7 +539,12 @@ function Report() {
 
               {/* 命运口味 */}
               <div
-                style={{ fontSize: 11, letterSpacing: ".3em", color: "#9a6b3a", position: "relative" }}
+                style={{
+                  fontSize: 11,
+                  letterSpacing: ".3em",
+                  color: "#9a6b3a",
+                  position: "relative",
+                }}
               >
                 命 运 口 味
               </div>
@@ -518,19 +565,25 @@ function Report() {
               {/* 三 chip */}
               <div style={{ display: "flex", gap: 8, marginTop: 18, position: "relative" }}>
                 <div style={chipStyle}>
-                  <div style={{ fontSize: 9, color: "#9a6b3a", letterSpacing: ".2em" }}>人生锅底</div>
+                  <div style={{ fontSize: 9, color: "#9a6b3a", letterSpacing: ".2em" }}>
+                    人生锅底
+                  </div>
                   <div style={{ fontFamily: serif, fontWeight: 700, fontSize: 13, marginTop: 3 }}>
                     {report.baseName}
                   </div>
                 </div>
                 <div style={chipStyle}>
-                  <div style={{ fontSize: 9, color: "#9a6b3a", letterSpacing: ".2em" }}>核心食材</div>
+                  <div style={{ fontSize: 9, color: "#9a6b3a", letterSpacing: ".2em" }}>
+                    核心食材
+                  </div>
                   <div style={{ fontFamily: serif, fontWeight: 700, fontSize: 13, marginTop: 3 }}>
                     {report.coreIng}
                   </div>
                 </div>
                 <div style={chipStyle}>
-                  <div style={{ fontSize: 9, color: "#9a6b3a", letterSpacing: ".2em" }}>灵魂蘸料</div>
+                  <div style={{ fontSize: 9, color: "#9a6b3a", letterSpacing: ".2em" }}>
+                    灵魂蘸料
+                  </div>
                   <div style={{ fontFamily: serif, fontWeight: 700, fontSize: 13, marginTop: 3 }}>
                     {report.soulSauce}
                   </div>
@@ -762,16 +815,35 @@ function Report() {
                 >
                   <div>
                     {summary.nickname && (
-                      <div style={{ fontSize: 12, color: "#9a6b3a", letterSpacing: ".1em", marginBottom: 5 }}>
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: "#9a6b3a",
+                          letterSpacing: ".1em",
+                          marginBottom: 5,
+                        }}
+                      >
                         致 「{summary.nickname}」
                       </div>
                     )}
                     <div
-                      style={{ fontFamily: serif, fontWeight: 900, fontSize: isPortrait ? 20 : 23, letterSpacing: ".12em" }}
+                      style={{
+                        fontFamily: serif,
+                        fontWeight: 900,
+                        fontSize: isPortrait ? 20 : 23,
+                        letterSpacing: ".12em",
+                      }}
                     >
                       命 运 故 事
                     </div>
-                    <div style={{ fontSize: 10, letterSpacing: ".4em", color: "#9a6b3a", marginTop: 3 }}>
+                    <div
+                      style={{
+                        fontSize: 10,
+                        letterSpacing: ".4em",
+                        color: "#9a6b3a",
+                        marginTop: 3,
+                      }}
+                    >
                       NARRATIVE STORY
                     </div>
                   </div>
@@ -901,7 +973,9 @@ function Report() {
                     )}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontFamily: serif, fontWeight: 700, fontSize: 13, color: "#2c2418" }}>
+                    <div
+                      style={{ fontFamily: serif, fontWeight: 700, fontSize: 13, color: "#2c2418" }}
+                    >
                       {isPortrait ? "您可以复制链接分享此报告" : "扫码在手机端保存报告"}
                     </div>
                     <div style={{ fontSize: 11, color: "#8a6a44", marginTop: 2, lineHeight: 1.4 }}>
@@ -1032,7 +1106,9 @@ function Report() {
         >
           <div>
             {summary.nickname && (
-              <div style={{ fontSize: 12, color: "#9a6b3a", letterSpacing: ".1em", marginBottom: 5 }}>
+              <div
+                style={{ fontSize: 12, color: "#9a6b3a", letterSpacing: ".1em", marginBottom: 5 }}
+              >
                 致 「{summary.nickname}」
               </div>
             )}
@@ -1077,7 +1153,9 @@ function Report() {
         />
 
         {/* Destiny Flavor */}
-        <div style={{ fontSize: 11, letterSpacing: ".3em", color: "#9a6b3a", position: "relative" }}>
+        <div
+          style={{ fontSize: 11, letterSpacing: ".3em", color: "#9a6b3a", position: "relative" }}
+        >
           命 运 口 味
         </div>
         <div
@@ -1217,7 +1295,15 @@ function Report() {
         />
 
         {/* Narrative Story */}
-        <div style={{ fontSize: 11, letterSpacing: ".3em", color: "#9a6b3a", position: "relative", marginBottom: 8 }}>
+        <div
+          style={{
+            fontSize: 11,
+            letterSpacing: ".3em",
+            color: "#9a6b3a",
+            position: "relative",
+            marginBottom: 8,
+          }}
+        >
           命 运 故 事
         </div>
         <div
@@ -1269,7 +1355,7 @@ function Report() {
                 fontWeight: 600,
               }}
             >
-              A I  观  察  员  评  价
+              A I 观 察 员 评 价
             </div>
             <div
               style={{

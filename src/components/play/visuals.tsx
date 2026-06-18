@@ -250,7 +250,6 @@ export function RealFoodVisual({ food, size = 82 }: { food: string; size?: numbe
   );
 }
 
-
 /* ============ 蘸料 ============ */
 export function CondimentVisual({ id, large = false }: { id: string; large?: boolean }) {
   const condiment = CONDIMENTS.find((c) => c.id === id);
@@ -267,7 +266,6 @@ export function CondimentVisual({ id, large = false }: { id: string; large?: boo
     />
   );
 }
-
 
 export function potIngredientStyle(food: string, tint: string, i: number): CSSProperties {
   const base: CSSProperties = {
@@ -337,7 +335,6 @@ export function potIngredientStyle(food: string, tint: string, i: number): CSSPr
     transform: `translate(-50%,-50%) rotate(${i * 19}deg)`,
   };
 }
-
 
 export function CenterPot({
   size,
@@ -424,7 +421,7 @@ export function CenterPot({
         style={{
           position: "absolute",
           left: isPortrait ? "50%" : 640,
-          top: isPortrait ? (potY - actualSize / 2 - 15) : 235,
+          top: isPortrait ? potY - actualSize / 2 - 15 : 235,
           transform: "translateX(-50%)",
           width: isPortrait ? 80 : 120,
           height: isPortrait ? 30 : 46,

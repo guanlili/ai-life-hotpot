@@ -73,7 +73,14 @@ export function topDims(coins: CoinDistribution, n = 2): Dim[] {
 // URL-safe encode/decode(报告可分享的核心)
 export function encodeSummary(s: SelectionSummary): string {
   // strip photo from URL payload (keep it local only)
-  const lite = { b: s.base, i: s.ingredients, c: s.condiments, p: s.picks, n: s.nickname, s: s.story };
+  const lite = {
+    b: s.base,
+    i: s.ingredients,
+    c: s.condiments,
+    p: s.picks,
+    n: s.nickname,
+    s: s.story,
+  };
   const json = JSON.stringify(lite);
   if (typeof window === "undefined") {
     return Buffer.from(json, "utf8").toString("base64url");
@@ -95,13 +102,13 @@ export function decodeSummary(id: string): SelectionSummary | null {
     // base 为数组(鸳鸯两个锅底);兼容历史单值格式
     const base: string[] = Array.isArray(lite.b) ? lite.b : lite.b ? [lite.b] : [];
     return {
-    base,
-    ingredients: lite.i ?? [],
-    condiments: lite.c ?? [],
-    picks: lite.p ?? [],
-    nickname: typeof lite.n === "string" ? lite.n : undefined,
-    story: typeof lite.s === "string" ? lite.s : undefined,
-  };
+      base,
+      ingredients: lite.i ?? [],
+      condiments: lite.c ?? [],
+      picks: lite.p ?? [],
+      nickname: typeof lite.n === "string" ? lite.n : undefined,
+      story: typeof lite.s === "string" ? lite.s : undefined,
+    };
   } catch {
     return null;
   }

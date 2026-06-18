@@ -42,16 +42,22 @@ export default {
     try {
       const url = new URL(request.url);
       if (url.pathname === "/api/ext/auth/create-chrome-session") {
-        return new Response(JSON.stringify({ success: true, data: "mock-chrome-extension-session-id" }), {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-        });
+        return new Response(
+          JSON.stringify({ success: true, data: "mock-chrome-extension-session-id" }),
+          {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
       }
       if (url.pathname.startsWith("/api/")) {
-        return new Response(JSON.stringify({ error: "Not Found", message: "API endpoint not found" }), {
-          status: 404,
-          headers: { "Content-Type": "application/json" },
-        });
+        return new Response(
+          JSON.stringify({ error: "Not Found", message: "API endpoint not found" }),
+          {
+            status: 404,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
       }
 
       const handler = await getServerEntry();

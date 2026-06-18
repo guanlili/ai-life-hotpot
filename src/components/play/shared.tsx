@@ -38,7 +38,6 @@ export function SelectBadge({ label }: { label: ReactNode }) {
   );
 }
 
-
 /* 荤/素 分区标识:落在锅与食材弧之间的空隙,作为分组提示(不拦截点击)。 */
 export function SideTag({
   char,
@@ -86,7 +85,6 @@ export function SideTag({
   );
 }
 
-
 /* ============ 共用小件 ============ */
 export function ScreenHead({ step, title, sub }: { step: string; title: string; sub?: string }) {
   return (
@@ -130,7 +128,6 @@ export function ScreenHead({ step, title, sub }: { step: string; title: string; 
   );
 }
 
-
 export function BottomBar({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ position: "absolute", left: 0, right: 0, bottom: 34, textAlign: "center" }}>
@@ -138,7 +135,6 @@ export function BottomBar({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
-
 
 export function StepRail({ step }: { step: Step }) {
   const isPortrait = useIsPortrait();
@@ -151,29 +147,47 @@ export function StepRail({ step }: { step: Step }) {
   return (
     <div
       className="lh-panel"
-      style={isPortrait ? {
-        display: "flex",
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        width: "calc(100% - 32px)",
-        maxWidth: 420,
-        margin: "16px auto 0",
-        borderRadius: 8,
-        padding: "10px 14px",
-        color: "#5a4630",
-        boxSizing: "border-box",
-      } : {
-        position: "absolute",
-        left: 32,
-        top: 30,
-        width: 188,
-        borderRadius: 8,
-        padding: "14px 14px 12px",
-        color: "#5a4630",
-      }}
+      style={
+        isPortrait
+          ? {
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              width: "calc(100% - 32px)",
+              maxWidth: 420,
+              margin: "16px auto 0",
+              borderRadius: 8,
+              padding: "10px 14px",
+              color: "#5a4630",
+              boxSizing: "border-box",
+            }
+          : {
+              position: "absolute",
+              left: 32,
+              top: 30,
+              width: 188,
+              borderRadius: 8,
+              padding: "14px 14px 12px",
+              color: "#5a4630",
+            }
+      }
     >
-      <div style={isPortrait ? { fontSize: 11, letterSpacing: ".12em", color: "#9a6b3a", flexShrink: 0, marginRight: 12 } : { fontSize: 11, letterSpacing: ".26em", color: "#9a6b3a" }}>当前火候</div>
+      <div
+        style={
+          isPortrait
+            ? {
+                fontSize: 11,
+                letterSpacing: ".12em",
+                color: "#9a6b3a",
+                flexShrink: 0,
+                marginRight: 12,
+              }
+            : { fontSize: 11, letterSpacing: ".26em", color: "#9a6b3a" }
+        }
+      >
+        当前火候
+      </div>
       <div style={{ display: "flex", gap: 7, flex: 1, marginTop: isPortrait ? 0 : 11 }}>
         {steps.map((s, i) => {
           const active = i <= current;
@@ -204,7 +218,6 @@ export function StepRail({ step }: { step: Step }) {
     </div>
   );
 }
-
 
 export function ObserverPanel({
   step,
@@ -239,27 +252,31 @@ export function ObserverPanel({
   return (
     <div
       className={dark ? "lh-panel-dark" : "lh-panel"}
-      style={isPortrait ? {
-        position: "relative",
-        width: "calc(100% - 32px)",
-        maxWidth: 420,
-        margin: "12px auto 0",
-        borderRadius: 8,
-        padding: 12,
-        color: dark ? "#f3e6c4" : "#3a2c1c",
-        boxSizing: "border-box",
-        animation: "lhFade .45s ease both",
-      } : {
-        position: "absolute",
-        right: 28,
-        top: step === "boiling" ? undefined : 28,
-        bottom: step === "boiling" ? 118 : undefined,
-        width: 252,
-        borderRadius: 8,
-        padding: 16,
-        color: dark ? "#f3e6c4" : "#3a2c1c",
-        animation: "lhFade .45s ease both",
-      }}
+      style={
+        isPortrait
+          ? {
+              position: "relative",
+              width: "calc(100% - 32px)",
+              maxWidth: 420,
+              margin: "12px auto 0",
+              borderRadius: 8,
+              padding: 12,
+              color: dark ? "#f3e6c4" : "#3a2c1c",
+              boxSizing: "border-box",
+              animation: "lhFade .45s ease both",
+            }
+          : {
+              position: "absolute",
+              right: 28,
+              top: step === "boiling" ? undefined : 28,
+              bottom: step === "boiling" ? 118 : undefined,
+              width: 252,
+              borderRadius: 8,
+              padding: 16,
+              color: dark ? "#f3e6c4" : "#3a2c1c",
+              animation: "lhFade .45s ease both",
+            }
+      }
     >
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <span
@@ -294,4 +311,3 @@ export function ObserverPanel({
     </div>
   );
 }
-

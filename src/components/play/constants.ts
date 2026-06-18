@@ -6,7 +6,11 @@ import { BASES } from "@/data/hotpot";
 export type Step = "base" | "ingredients" | "sauce" | "boiling";
 
 export const serif = "'Noto Serif SC',serif";
-export const BOIL_LINES = ["我们已经观察你三分钟。", "你以为自己在配火锅。", "其实，你正在构建人生。"];
+export const BOIL_LINES = [
+  "我们已经观察你三分钟。",
+  "你以为自己在配火锅。",
+  "其实，你正在构建人生。",
+];
 export const TIMER_SECONDS = 60;
 export const C = { cx: 640, cy: 412 };
 export const GAME_W = 1280;

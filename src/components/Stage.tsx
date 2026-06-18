@@ -4,7 +4,15 @@ import { useIsPortrait } from "@/hooks/use-mobile";
 const BOARD_W = 1280;
 const BOARD_H = 720;
 
-export function Stage({ children, dark = false, disableScroll = false }: { children: ReactNode; dark?: boolean; disableScroll?: boolean }) {
+export function Stage({
+  children,
+  dark = false,
+  disableScroll = false,
+}: {
+  children: ReactNode;
+  dark?: boolean;
+  disableScroll?: boolean;
+}) {
   const [scale, setScale] = useState(1);
   const isPortrait = useIsPortrait();
 
@@ -95,4 +103,3 @@ export function Stage({ children, dark = false, disableScroll = false }: { child
     </div>
   );
 }
-

@@ -98,7 +98,7 @@ function Play() {
         };
       });
     }
-  }, [isPortrait, winWidth, winHeight]);
+  }, [isPortrait, winWidth]);
 
   const {
     foods: gestureFoods,
@@ -247,7 +247,10 @@ function Play() {
   };
 
   return (
-    <Stage dark={step === "boiling"} disableScroll={isPortrait && gestureEnabled && step === "ingredients"}>
+    <Stage
+      dark={step === "boiling"}
+      disableScroll={isPortrait && gestureEnabled && step === "ingredients"}
+    >
       {step !== "boiling" && <StepRail step={step} />}
       {step === "base" && (
         <BaseStep
@@ -261,17 +264,17 @@ function Play() {
       {step === "ingredients" && (
         <>
           <IngStep
-             ings={ings}
-             meatPicked={meatPicked}
-             vegPicked={vegPicked}
-             baseImage={baseImage}
-             baseColor={baseColor}
-             secs={secs}
-             lifeLeft={lifeLeft}
-             onToggle={toggleIng}
-             onNext={() => setStep("sauce")}
-             gestureEnabled={gestureEnabled}
-             onToggleGesture={() => setGestureEnabled(!gestureEnabled)}
+            ings={ings}
+            meatPicked={meatPicked}
+            vegPicked={vegPicked}
+            baseImage={baseImage}
+            baseColor={baseColor}
+            secs={secs}
+            lifeLeft={lifeLeft}
+            onToggle={toggleIng}
+            onNext={() => setStep("sauce")}
+            gestureEnabled={gestureEnabled}
+            onToggleGesture={() => setGestureEnabled(!gestureEnabled)}
           />
           <GestureGameLayer
             enabled={gestureEnabled && step === "ingredients"}
@@ -318,4 +321,3 @@ function Play() {
     </Stage>
   );
 }
-

@@ -41,18 +41,28 @@ export function SauceStep({
 
   if (isPortrait) {
     return (
-      <div style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        width: "100%",
-        padding: "0 16px 120px",
-        boxSizing: "border-box",
-        position: "relative",
-      }}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          width: "100%",
+          padding: "0 16px 120px",
+          boxSizing: "border-box",
+          position: "relative",
+        }}
+      >
         <div style={{ textAlign: "center", marginTop: 20, marginBottom: 15 }}>
           <div style={{ fontSize: 12, letterSpacing: ".3em", color: "#9a6b3a" }}>第三步</div>
-          <div style={{ fontFamily: serif, fontWeight: 700, fontSize: 24, color: "#2c2418", marginTop: 4 }}>
+          <div
+            style={{
+              fontFamily: serif,
+              fontWeight: 700,
+              fontSize: 24,
+              color: "#2c2418",
+              marginTop: 4,
+            }}
+          >
             调蘸料 · 定行为风格
           </div>
           <div style={{ fontSize: 11, color: "#8a6a44", marginTop: 4 }}>
@@ -195,22 +205,26 @@ export function SauceStep({
                 >
                   {s.name}
                 </div>
-                <div style={{ fontSize: 10, color: "#9a3a2c", transform: "scale(0.95)" }}>{s.style}</div>
+                <div style={{ fontSize: 10, color: "#9a3a2c", transform: "scale(0.95)" }}>
+                  {s.style}
+                </div>
               </div>
             );
           })}
         </div>
 
-        <div style={{
-          position: "fixed",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          padding: "16px 20px 24px",
-          background: "linear-gradient(180deg, transparent, #f4eddd 25%)",
-          textAlign: "center",
-          zIndex: 10,
-        }}>
+        <div
+          style={{
+            position: "fixed",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            padding: "16px 20px 24px",
+            background: "linear-gradient(180deg, transparent, #f4eddd 25%)",
+            textAlign: "center",
+            zIndex: 10,
+          }}
+        >
           <button onClick={onConfirm} style={{ ...btnPrimary, width: "100%", maxWidth: 300 }}>
             选好了
           </button>
@@ -397,4 +411,3 @@ export function SauceStep({
     </>
   );
 }
-

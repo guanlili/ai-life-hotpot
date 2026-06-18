@@ -26,7 +26,7 @@ export function BoilStep({
     "正在计算 100 金币人生分配...",
     "正在结合火锅推演人生哲理...",
     "AI 观察员正在为您撰写命运判词...",
-    "正在整合你的命运故事轨迹..."
+    "正在整合你的命运故事轨迹...",
   ];
 
   useEffect(() => {
@@ -35,21 +35,23 @@ export function BoilStep({
       setTipIndex((prev) => (prev + 1) % tips.length);
     }, 2200);
     return () => clearInterval(timer);
-  }, [storyLoading]);
+  }, [storyLoading, tips.length]);
 
   if (isPortrait) {
     return (
-      <div style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        width: "100%",
-        height: "100%",
-        padding: "24px 20px 40px",
-        boxSizing: "border-box",
-        position: "relative",
-        justifyContent: "space-between",
-      }}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          width: "100%",
+          height: "100%",
+          padding: "24px 20px 40px",
+          boxSizing: "border-box",
+          position: "relative",
+          justifyContent: "space-between",
+        }}
+      >
         {/* Heat glow */}
         <div
           style={{
@@ -114,15 +116,21 @@ export function BoilStep({
           </div>
 
           {baseImage ? (
-            <div style={{
-              position: "absolute",
-              inset: 0,
-              borderRadius: "50%",
-              overflow: "hidden",
-              border: "3px solid #9a7b4a",
-              boxShadow: "0 0 0 4px rgba(90,70,40,.2), inset 0 0 20px rgba(0,0,0,.15)",
-            }}>
-              <img src={baseImage} alt="锅底" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                borderRadius: "50%",
+                overflow: "hidden",
+                border: "3px solid #9a7b4a",
+                boxShadow: "0 0 0 4px rgba(90,70,40,.2), inset 0 0 20px rgba(0,0,0,.15)",
+              }}
+            >
+              <img
+                src={baseImage}
+                alt="锅底"
+                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+              />
             </div>
           ) : (
             <YuanyangPot />
@@ -349,15 +357,21 @@ export function BoilStep({
           ))}
         </div>
         {baseImage ? (
-          <div style={{
-            position: "absolute",
-            inset: 0,
-            borderRadius: "50%",
-            overflow: "hidden",
-            border: "4px solid #9a7b4a",
-            boxShadow: "0 0 0 6px rgba(90,70,40,.2), inset 0 0 30px rgba(0,0,0,.15)",
-          }}>
-            <img src={baseImage} alt="锅底" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              borderRadius: "50%",
+              overflow: "hidden",
+              border: "4px solid #9a7b4a",
+              boxShadow: "0 0 0 6px rgba(90,70,40,.2), inset 0 0 30px rgba(0,0,0,.15)",
+            }}
+          >
+            <img
+              src={baseImage}
+              alt="锅底"
+              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+            />
           </div>
         ) : (
           <YuanyangPot />
@@ -516,4 +530,3 @@ export function BoilStep({
     </>
   );
 }
-

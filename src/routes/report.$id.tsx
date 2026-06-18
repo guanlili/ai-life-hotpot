@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import QRCode from "qrcode";
 import { Stage } from "@/components/Stage";
 import { DIM_LABEL, itemById } from "@/data/hotpot";
@@ -100,6 +100,148 @@ function parseStory(raw: string): {
     .replace(/^[ \t]*一句命运总结[^\n]*\r?\n?/m, "")
     .trim();
   return { title, slogan, observer, narrative: narrative || body };
+}
+
+function parseItalic(content: string): ReactNode[] {
+  const italicRegex = /(\*.*?\*|_.*?_)/g;
+  const parts = content.split(italicRegex);
+  return parts.map((part, i) => {
+    if ((part.startsWith("*") && part.endsWith("*")) || (part.startsWith("_") && part.endsWith("_"))) {
+      return <em key={i} style={{ fontStyle: "italic" }}>{part.slice(1, -1)}</em>;
+    }
+    return part;
+  });
+}
+
+function parseInlineElements(content: string): ReactNode[] {
+  const boldRegex = /(\*\*.*?\*\*|__.*?__)/g;
+  const parts = content.split(boldRegex);
+  return parts.flatMap((part, i) => {
+    if ((part.startsWith("**") && part.endsWith("**")) || (part.startsWith("__") && part.endsWith("__"))) {
+      return <strong key={i} style={{ fontWeight: 700, color: "#1c140c" }}>{parseItalic(part.slice(2, -2))}</strong>;
+    }
+    return parseItalic(part);
+  });
+}
+
+function RichText({ text, style }: { text: string; style?: CSSProperties }) {
+  if (!text) return null;
+
+  const lines = text.split("\n");
+  const blocks: ReactNode[] = [];
+  let listItems: ReactNode[] = [];
+
+  const flushList = (key: string | number) => {
+    if (listItems.length > 0) {
+      blocks.push(
+        <ul
+          key={`list-${key}`}
+          style={{
+            margin: "6px 0",
+            paddingLeft: "16px",
+            listStyleType: "disc",
+          }}
+        >
+          {listItems}
+        </ul>
+      );
+      listItems = [];
+    }
+  };
+
+  lines.forEach((line, index) => {
+    const trimmed = line.trim();
+
+    if (!trimmed) {
+      flushList(index);
+      blocks.push(<div key={`br-${index}`} style={{ height: "8px" }} />);
+      return;
+    }
+
+    // Headers
+    const headerMatch = trimmed.match(/^(#{1,6})\s+(.*)$/);
+    if (headerMatch) {
+      flushList(index);
+      const level = headerMatch[1].length;
+      const content = headerMatch[2];
+      const displayContent = content.replace(/^【\s*/, "").replace(/\s*】$/, "");
+      const fontSize = level === 1 ? 17 : level === 2 ? 15 : level === 3 ? 13.5 : 12.5;
+      blocks.push(
+        <div
+          key={`h-${index}`}
+          style={{
+            fontFamily: serif,
+            fontWeight: 800,
+            fontSize,
+            color: "#7a2418",
+            marginTop: "16px",
+            marginBottom: "8px",
+            letterSpacing: "0.02em",
+          }}
+        >
+          {parseInlineElements(displayContent)}
+        </div>
+      );
+      return;
+    }
+
+    // Lists
+    const listMatch = trimmed.match(/^([*\-•])\s+(.*)$/);
+    if (listMatch) {
+      const content = listMatch[2];
+      listItems.push(
+        <li
+          key={`li-${index}`}
+          style={{
+            marginBottom: "4px",
+            lineHeight: 1.6,
+          }}
+        >
+          {parseInlineElements(content)}
+        </li>
+      );
+      return;
+    }
+
+    flushList(index);
+
+    const isNodeHeader = trimmed.startsWith("【命运节点") || trimmed.startsWith("【AI观察员评价】") || (trimmed.startsWith("【") && trimmed.endsWith("】")) || (trimmed.includes("岁") && (trimmed.includes("·") || trimmed.includes("：") || trimmed.includes(":")));
+
+    if (isNodeHeader) {
+      blocks.push(
+        <div
+          key={`node-${index}`}
+          style={{
+            fontFamily: serif,
+            fontWeight: 700,
+            fontSize: 13,
+            color: "#7a2418",
+            marginTop: "14px",
+            marginBottom: "6px",
+            letterSpacing: "0.02em",
+          }}
+        >
+          {parseInlineElements(trimmed.replace(/^【\s*/, "").replace(/\s*】$/, ""))}
+        </div>
+      );
+    } else {
+      blocks.push(
+        <p
+          key={`p-${index}`}
+          style={{
+            margin: "0 0 8px 0",
+            lineHeight: 1.65,
+          }}
+        >
+          {parseInlineElements(trimmed)}
+        </p>
+      );
+    }
+  });
+
+  flushList("end");
+
+  return <div style={{ fontSize: "inherit", color: "inherit", ...style }}>{blocks}</div>;
 }
 
 function Report() {
@@ -497,7 +639,7 @@ function Report() {
                       zIndex: 1,
                     }}
                   >
-                    {parsed.observer}
+                    <RichText text={parsed.observer} />
                   </div>
                 </div>
               )}
@@ -674,7 +816,6 @@ function Report() {
                     fontSize: 12.5,
                     lineHeight: 1.65,
                     color: "#3a2c1c",
-                    whiteSpace: "pre-line",
                   }}
                 >
                   {storyLoading && (
@@ -707,7 +848,7 @@ function Report() {
                       <span>大模型正在为您深度推演故事细节，稍后将自动无缝升级...</span>
                     </div>
                   )}
-                  {parsed.narrative || story}
+                  <RichText text={parsed.narrative || story} />
                 </div>
 
                 {/* 底部: 扫码保存 + 按钮 */}

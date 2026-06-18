@@ -6,6 +6,44 @@ import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 const BOARD_W = 1280;
 const BOARD_H = 720;
 
+// 竖屏引导:纯 CSS @media 控制显隐,横屏不占位、SSR 安全无闪烁。
+function RotateHint() {
+  return (
+    <div className="lh-rotate-hint" role="status" aria-live="polite">
+      <svg
+        width="78"
+        height="78"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="#caa05a"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        style={{ animation: "lhRotateDevice 2.6s ease-in-out infinite" }}
+      >
+        <rect x="7" y="2.5" width="10" height="19" rx="2.4" />
+        <line x1="10.5" y1="18.6" x2="13.5" y2="18.6" />
+        <path d="M3.5 9.6a9 9 0 0 0 0 4.8" />
+        <path d="M20.5 14.4a9 9 0 0 0 0-4.8" />
+      </svg>
+      <div
+        style={{
+          fontFamily: "'Noto Serif SC',serif",
+          fontWeight: 800,
+          fontSize: 24,
+          letterSpacing: ".2em",
+          color: "#f3e6c4",
+        }}
+      >
+        请横置屏幕
+      </div>
+      <div style={{ fontSize: 13, letterSpacing: ".14em", color: "#caa05a" }}>
+        横屏才能涮好这锅人生
+      </div>
+    </div>
+  );
+}
+
 export function Stage({ children, dark = false }: { children: ReactNode; dark?: boolean }) {
   const [scale, setScale] = useState(1);
 
@@ -48,6 +86,7 @@ export function Stage({ children, dark = false }: { children: ReactNode; dark?: 
 
   return (
     <div style={outer}>
+      <RotateHint />
       <div style={board}>
         {!dark && (
           <>

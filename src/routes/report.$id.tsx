@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import QRCode from "qrcode";
 import { Stage } from "@/components/Stage";
 import { DIM_LABEL, itemById } from "@/data/hotpot";
-import { decodeSummary } from "@/lib/scoring";
+import { decodeSummary, encodeSummary } from "@/lib/scoring";
 import { buildReport } from "@/lib/mockReport";
 import { generateStory } from "@/lib/llm";
 
@@ -149,15 +149,19 @@ function Report() {
   }, [summary, report]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    QRCode.toDataURL(window.location.href, {
+    if (typeof window === "undefined" || !summary) return;
+    // 二维码走精简链接(剔除 AI 故事)，避免 URL 过长导致模块过密、手机扫不出。
+    // 扫码者进入报告页后，选择/金币分布一致，故事会回落模板或后台重新生成。
+    const liteId = encodeSummary({ ...summary, story: undefined });
+    const shareUrl = window.location.origin + window.location.pathname.replace(/[^/]+$/, liteId);
+    QRCode.toDataURL(shareUrl, {
       width: 320,
       margin: 1,
       color: { dark: "#1c140c", light: "#ffffff" },
     })
       .then(setQr)
       .catch(() => setQr(null));
-  }, [id]);
+  }, [id, summary]);
 
   if (!summary || !report) return <ReportError />;
   const chosenNames = [...summary.base, ...summary.ingredients, ...summary.condiments]

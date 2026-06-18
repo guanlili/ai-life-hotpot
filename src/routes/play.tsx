@@ -767,6 +767,7 @@ function IngStep({
   });
   const mm = Math.floor(secs / 60);
   const ss = String(secs % 60).padStart(2, "0");
+  const timesUp = secs <= 0;
 
   // 下锅飞入:仅"新增"食材时,从食材位置划弧飞向锅心(640,400)。
   const [flyers, setFlyers] = useState<{ key: number; food: string; x: number; y: number }[]>([]);
@@ -820,10 +821,11 @@ function IngStep({
             fontWeight: 700,
             fontSize: 22,
             letterSpacing: ".12em",
-            color: "#7a3228",
+            color: timesUp ? "#b4382b" : "#7a3228",
+            animation: timesUp ? "lhPulse 1.4s ease-in-out infinite" : undefined,
           }}
         >
-          一分 · {mm}:{ss}
+          {timesUp ? "时间到 · 随时开涮" : `一分 · ${mm}:${ss}`}
         </div>
         <div style={{ fontSize: 12, color: "#8a6a44", marginTop: 3, letterSpacing: ".1em" }}>
           荤 {meatPicked} · 素 {vegPicked} · 多少不限，可不选
@@ -1054,9 +1056,10 @@ function IngStep({
             padding: "10px 38px",
             fontSize: 16,
             boxShadow: "0 8px 18px rgba(150,40,30,.26)",
+            animation: timesUp ? "lhRingPulse 1.6s ease-in-out infinite" : undefined,
           }}
         >
-          开 始 涮 人 生
+          {timesUp ? "时 间 到 · 开 始 涮" : "开 始 涮 人 生"}
         </button>
       </div>
     </>
@@ -1065,119 +1068,18 @@ function IngStep({
 
 /* ============ 蘸料 ============ */
 function CondimentVisual({ id, large = false }: { id: string; large?: boolean }) {
-  const scale = large ? 1.28 : 1;
-  const dot = (key: string, style: CSSProperties) => (
-    <span key={key} style={{ position: "absolute", ...style }} />
-  );
-  const bits: ReactNode[] = [];
-
-  if (id === "garlic") {
-    for (let i = 0; i < 18; i++) {
-      bits.push(
-        dot(`g${i}`, {
-          left: 18 + ((i * 17) % 44),
-          top: 18 + ((i * 23) % 44),
-          width: 7 * scale,
-          height: 6 * scale,
-          borderRadius: "45%",
-          background: i % 3 ? "#f1ead2" : "#d8cda9",
-          boxShadow: "inset -1px -1px 1px rgba(130,110,70,.28)",
-          transform: `rotate(${i * 31}deg)`,
-        }),
-      );
-    }
-  } else if (id === "cilantro" || id === "scallion") {
-    const colors =
-      id === "cilantro" ? ["#287a38", "#3f9a4a", "#76b85b"] : ["#4a9a44", "#91c96a", "#e3efd0"];
-    for (let i = 0; i < 20; i++) {
-      bits.push(
-        dot(`${id}${i}`, {
-          left: 15 + ((i * 19) % 50),
-          top: 17 + ((i * 29) % 46),
-          width: (id === "scallion" ? 12 : 11) * scale,
-          height: (id === "scallion" ? 4 : 6) * scale,
-          borderRadius: id === "scallion" ? 8 : "65% 35% 65% 35%",
-          background: colors[i % colors.length],
-          transform: `rotate(${(i * 37) % 180}deg)`,
-          boxShadow: "0 1px 1px rgba(0,0,0,.18)",
-        }),
-      );
-    }
-  } else if (id === "chili" || id === "chilioil") {
-    for (let i = 0; i < 13; i++) {
-      bits.push(
-        dot(`c${i}`, {
-          left: 16 + ((i * 21) % 48),
-          top: 15 + ((i * 27) % 50),
-          width: 13 * scale,
-          height: 8 * scale,
-          borderRadius: "50%",
-          background: i % 2 ? "#d83b21" : "#a92016",
-          border: "1px solid rgba(255,185,120,.42)",
-          transform: `rotate(${i * 29}deg)`,
-          boxShadow: "inset 0 0 0 2px rgba(90,20,10,.18)",
-        }),
-      );
-    }
-    if (id === "chilioil") {
-      bits.unshift(
-        dot("oil", {
-          inset: 10,
-          borderRadius: "50%",
-          background:
-            "radial-gradient(circle at 40% 34%,rgba(255,155,64,.86),rgba(180,45,24,.9) 64%,rgba(120,24,16,.92))",
-          filter: "saturate(1.1)",
-        }),
-      );
-    }
-  } else if (id === "sesame" || id === "peanut") {
-    for (let i = 0; i < (id === "sesame" ? 28 : 18); i++) {
-      bits.push(
-        dot(`${id}${i}`, {
-          left: 15 + ((i * 13) % 52),
-          top: 16 + ((i * 23) % 48),
-          width: (id === "sesame" ? 4 : 9) * scale,
-          height: (id === "sesame" ? 7 : 7) * scale,
-          borderRadius: id === "sesame" ? "50%" : "40%",
-          background:
-            id === "sesame" ? (i % 3 ? "#ead9a6" : "#fff1c8") : i % 2 ? "#c48748" : "#e0b477",
-          transform: `rotate(${i * 41}deg)`,
-          boxShadow: "0 1px 1px rgba(0,0,0,.2)",
-        }),
-      );
-    }
-  } else {
-    const sauceMap: Record<string, string> = {
-      oyster: "radial-gradient(circle at 38% 30%,#8a6239,#4d2d18 66%,#2b170d)",
-      vinegar: "radial-gradient(circle at 40% 32%,#7b3a1b,#3f1f12 72%,#1d0d08)",
-      sesameoil: "radial-gradient(circle at 38% 30%,#ffd068,#d89b23 64%,#9b6416)",
-    };
-    bits.push(
-      dot(id, {
-        inset: 9,
-        borderRadius: "50%",
-        background: sauceMap[id],
-        boxShadow: "inset 0 5px 12px rgba(255,255,255,.18), inset 0 -8px 16px rgba(0,0,0,.24)",
-      }),
-    );
-    bits.push(
-      dot(`${id}-shine`, {
-        left: 24,
-        top: 18,
-        width: 26,
-        height: 10,
-        borderRadius: "50%",
-        background: "rgba(255,255,255,.22)",
-        filter: "blur(2px)",
-        transform: "rotate(-12deg)",
-      }),
-    );
-  }
-
+  const condiment = CONDIMENTS.find((c) => c.id === id);
+  if (!condiment) return null;
   return (
-    <div style={{ position: "absolute", inset: 0, overflow: "hidden", borderRadius: "50%" }}>
-      {bits}
-    </div>
+    <img
+      src={condiment.image}
+      alt={condiment.name}
+      style={{
+        width: "100%",
+        height: "100%",
+        objectFit: "cover",
+      }}
+    />
   );
 }
 

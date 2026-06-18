@@ -359,39 +359,18 @@ function BaseStep({
               {sel && <SelectBadge label={idx + 1} />}
             </div>
             <div style={{ minWidth: 0, flex: 1, textAlign: leftSide ? "left" : "right" }}>
+              {/* 只露锅底名字，藏起含义(tone/tagline),让选择更凭直觉 */}
               <div
                 style={{
                   fontFamily: serif,
                   fontWeight: 800,
-                  fontSize: 19,
+                  fontSize: 22,
                   lineHeight: 1.15,
                   color: "#2c2418",
                   letterSpacing: ".08em",
                 }}
               >
-                {b.tone}
-              </div>
-              <div
-                style={{
-                  fontSize: 12,
-                  color: "#8a6a44",
-                  marginTop: 5,
-                  letterSpacing: ".04em",
-                  whiteSpace: "nowrap",
-                }}
-              >
                 {b.name}
-              </div>
-              <div
-                style={{
-                  fontSize: 11,
-                  color: "#a98f63",
-                  marginTop: 5,
-                  lineHeight: 1.35,
-                  minHeight: 30,
-                }}
-              >
-                {b.tagline}
               </div>
             </div>
           </div>

@@ -174,7 +174,35 @@ export function GestureGameLayer({
         </div>
       ))}
 
-      {/* 摄像头预览 — 可折叠 */}
+      {/* 视频/canvas 元素始终挂载，保证 MediaPipe 视频引用不丢 */}
+      <video
+        ref={videoRef}
+        style={{
+          position: "fixed",
+          left: -9999,
+          top: -9999,
+          width: 640,
+          height: 480,
+          opacity: 0,
+          pointerEvents: "none",
+        }}
+        muted
+        playsInline
+      />
+      <canvas
+        ref={canvasRef}
+        style={{
+          position: "fixed",
+          left: -9999,
+          top: -9999,
+          opacity: 0,
+          pointerEvents: "none",
+        }}
+        width={CAM_W}
+        height={CAM_H}
+      />
+
+      {/* 摄像头预览面板 — 可折叠 */}
       <div
         style={{
           position: "absolute",
@@ -251,13 +279,12 @@ export function GestureGameLayer({
                 {camError}
               </div>
             ) : (
-              <>
-                <canvas
-                  ref={canvasRef}
-                  style={{ width: CAM_W, height: CAM_H, borderRadius: 8, display: "block" }}
-                />
-                <video ref={videoRef} style={{ display: "none" }} />
-              </>
+              <PreviewCanvas
+                video={videoRef.current}
+                ready={camReady}
+                width={CAM_W}
+                height={CAM_H}
+              />
             )}
             <div
               style={{
@@ -373,4 +400,72 @@ function gestureLabel(g: GestureState): string {
   if (g === "fist") return "✊ 握拳";
   if (g === "trans") return "过渡";
   return "✋ 请出手";
+}
+
+/** 独立可见 canvas，从离屏 video 拷贝帧 */
+function PreviewCanvas({
+  video,
+  ready,
+  width,
+  height,
+}: {
+  video: HTMLVideoElement | null;
+  ready: boolean;
+  width: number;
+  height: number;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    if (!ready || !video || !canvasRef.current) return;
+    const canvas = canvasRef.current;
+    if (canvas.width !== width) canvas.width = width;
+    if (canvas.height !== height) canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    let raf = 0;
+    const draw = () => {
+      if (video.readyState >= 2) {
+        ctx.clearRect(0, 0, width, height);
+        ctx.save();
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, -width, 0, width, height);
+        ctx.restore();
+      }
+      raf = requestAnimationFrame(draw);
+    };
+    raf = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(raf);
+  }, [ready, video, width, height]);
+  return (
+    <div
+      style={{
+        width,
+        height,
+        background: "#1a1a1a",
+        borderRadius: 8,
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      <canvas
+        ref={canvasRef}
+        style={{ width, height, borderRadius: 8, display: "block" }}
+      />
+      {!ready && (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "#888",
+            fontSize: 12,
+          }}
+        >
+          启动摄像头中…
+        </div>
+      )}
+    </div>
+  );
 }

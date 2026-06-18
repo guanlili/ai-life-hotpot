@@ -421,7 +421,7 @@ function Report() {
                 borderRadius: 8,
                 boxShadow: "0 30px 70px rgba(60,40,20,.4)",
                 border: "1px solid rgba(154,123,74,.4)",
-                overflowY: "auto",
+                overflow: "hidden",
                 WebkitOverflowScrolling: "touch",
                 padding: isPortrait ? "20px 20px 48px 20px" : "30px 34px 56px 34px",
                 color: "#2c2418",
@@ -598,8 +598,8 @@ function Report() {
                 ))}
               </div>
 
-              {/* 弹性空白，完美均分正页元素空间 */}
-              <div style={{ flex: "1 1 auto", minHeight: 12 }} />
+              {/* 弹性空白，让正页更像一张完整封面卡，而不是详情页滚动容器 */}
+              <div style={{ flex: "1 1 auto", minHeight: isPortrait ? 10 : 16 }} />
 
               {/* 命运点题:锅名 + 一句命运总结 */}
               {parsed.title && (
@@ -611,7 +611,7 @@ function Report() {
                     lineHeight: 1.3,
                     color: "#7a2418",
                     position: "relative",
-                    marginTop: 10,
+                    marginTop: isPortrait ? 8 : 10,
                   }}
                 >
                   {parsed.title}
@@ -624,7 +624,7 @@ function Report() {
                     fontSize: isPortrait ? 12 : 13,
                     lineHeight: 1.5,
                     color: "#5a4630",
-                    marginTop: 8,
+                    marginTop: 7,
                     position: "relative",
                   }}
                 >
@@ -632,87 +632,15 @@ function Report() {
                 </div>
               )}
 
-              {/* 虚线分割线 */}
-              {parsed.observer && (
-                <div
-                  style={{
-                    height: 1,
-                    borderTop: "1.5px dashed rgba(154,123,74,.3)",
-                    margin: "18px 0 14px 0",
-                  }}
-                />
-              )}
-
-              {/* AI观察员评价 */}
-              {parsed.observer && (
-                <div
-                  style={{
-                    position: "relative",
-                    background: "rgba(154,123,74,.05)",
-                    border: "1px solid rgba(154,123,74,.18)",
-                    borderRadius: 8,
-                    padding: "14px 18px",
-                    boxShadow: "0 4px 12px rgba(60,40,20,.02)",
-                  }}
-                >
-                  {/* 大引号装饰 */}
-                  <span
-                    style={{
-                      position: "absolute",
-                      left: 12,
-                      top: -8,
-                      fontFamily: serif,
-                      fontSize: 36,
-                      color: "#9a6b3a",
-                      opacity: 0.18,
-                      lineHeight: 1,
-                    }}
-                  >
-                    “
-                  </span>
-                  <div
-                    style={{
-                      fontSize: 10,
-                      letterSpacing: ".24em",
-                      color: "#9a6b3a",
-                      marginBottom: 6,
-                      fontWeight: 600,
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <span>A I  观  察  员  评  价</span>
-                    {storyLoading && (
-                      <span
-                        style={{
-                          fontSize: 9,
-                          color: "#caa05a",
-                          animation: "lhPulse 1.5s infinite",
-                          fontWeight: "normal",
-                        }}
-                      >
-                        ✨ AI正在精修命运哲理...
-                      </span>
-                    )}
-                  </div>
-                  <div
-                    style={{
-                      fontFamily: serif,
-                      fontSize: 12.4,
-                      lineHeight: 1.65,
-                      color: "#3a2c1c",
-                      position: "relative",
-                      zIndex: 1,
-                    }}
-                  >
-                    <RichText text={parsed.observer} />
-                  </div>
-                </div>
-              )}
-
               {/* 切换到背面的按钮 & 保存图片按钮 */}
-              <div style={{ display: "flex", gap: 10, alignSelf: "center", marginTop: 18 }}>
+              <div
+                style={{
+                  display: "flex",
+                  gap: 10,
+                  alignSelf: "center",
+                  marginTop: isPortrait ? 14 : 18,
+                }}
+              >
                 <div
                   onClick={() => setIsFlipped(true)}
                   style={{

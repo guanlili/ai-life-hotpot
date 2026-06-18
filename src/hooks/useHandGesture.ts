@@ -1,24 +1,16 @@
 /**
- * 手势检测 Hook（只负责检测，不含游戏逻辑）。
+ * 手势检测 Hook（只负责检测，不含游戏逻辑）
  *
- * 判定规则：
- *   - 4 根非拇指指尖 y < 对应 PIP y - 0.02 → 该指伸直
- *   - |thumb_tip.x - index_mcp.x| > 0.08 → 拇指伸直
+ * 来源参考 /home/samsong/Desktop/maybe/mediapipe/learn/scripts/hotpot_demo.py：
+ *   - 4 根非拇指指尖 y < PIP y - 0.02 → 指伸直
+ *   - |thumb_tip.x - index_mcp.x| > 0.08 → 拇伸直
  *   - n_open >= 4 → "open"，n_open <= 1 → "fist"，否则 "trans"
- *   - 再过一个 5 帧多数投票滤波，避免抖动
  *
- * 帧驱动：调用方传入 <video>，hook 在 rAF 里持续检测并回调 onSample。
- * 资源（wasm + 模型）走固定版本 CDN；失败时 onError，调用方回落到鼠标点击。
+ * 帧驱动：调用方在动画帧里把 video 喂进来，hook 会自动起检测循环。
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { FilesetResolver, HandLandmarker } from "@mediapipe/tasks-vision";
-
-// 固定版本，避免 @latest 不可复现。如需现场离线，把 wasm 目录与模型放进 public/ 并改这两个常量即可。
-const MP_VERSION = "0.10.35";
-const WASM_BASE = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MP_VERSION}/wasm`;
-const MODEL_URL =
-  "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task";
 
 export type GestureState = "open" | "fist" | "trans" | "none";
 
@@ -45,34 +37,31 @@ export function useHandGesture({ video, enabled, onSample }: UseHandGestureOpts)
   const onSampleRef = useRef(onSample);
   onSampleRef.current = onSample;
 
-  // 初始化 detector（GPU 失败回退 CPU）
+  // 初始化 detector
   useEffect(() => {
     if (!enabled) return;
     let mounted = true;
     (async () => {
       try {
-        const vision = await FilesetResolver.forVisionTasks(WASM_BASE);
-        const create = (delegate: "GPU" | "CPU") =>
-          HandLandmarker.createFromOptions(vision, {
-            baseOptions: { modelAssetPath: MODEL_URL, delegate },
-            runningMode: "VIDEO",
-            numHands: 1,
-          });
-        let det: HandLandmarker;
-        try {
-          det = await create("GPU");
-        } catch {
-          det = await create("CPU");
-        }
+        const vision = await FilesetResolver.forVisionTasks(
+          "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm",
+        );
+        const det = await HandLandmarker.createFromOptions(vision, {
+          baseOptions: {
+            modelAssetPath:
+              "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
+            delegate: "GPU",
+          },
+          runningMode: "VIDEO",
+          numHands: 1,
+        });
         if (mounted) {
           detectorRef.current = det;
           setReady(true);
-        } else {
-          det.close();
         }
       } catch (e) {
         if (mounted) {
-          setError("无法初始化手势检测，请检查网络或刷新重试");
+          setError("无法初始化手势检测，请刷新页面重试");
           console.error("[gesture] init failed", e);
         }
       }
@@ -82,7 +71,7 @@ export function useHandGesture({ video, enabled, onSample }: UseHandGestureOpts)
       setReady(false);
       const det = detectorRef.current;
       detectorRef.current = null;
-      det?.close();
+      if (det) det.close();
     };
   }, [enabled]);
 
@@ -101,8 +90,14 @@ export function useHandGesture({ video, enabled, onSample }: UseHandGestureOpts)
         const r = det.detectForVideo(video, performance.now());
         if (r.landmarks && r.landmarks.length > 0) {
           const lm = r.landmarks[0];
-          const g = filterRef.current.push(detectRaw(lm));
-          onSampleRef.current?.({ gesture: g, x: 1 - lm[0].x, y: lm[0].y, detected: true });
+          const raw = detectRaw(lm);
+          const g = filterRef.current.push(raw);
+          onSampleRef.current?.({
+            gesture: g,
+            x: 1 - lm[0].x,
+            y: lm[0].y,
+            detected: true,
+          });
         } else {
           onSampleRef.current?.({ gesture: "none", x: 0, y: 0, detected: false });
         }
@@ -116,10 +111,27 @@ export function useHandGesture({ video, enabled, onSample }: UseHandGestureOpts)
     return () => cancelAnimationFrame(rafRef.current);
   }, [enabled, ready, video]);
 
-  return { ready, error };
+  const requestCamera = useCallback(async (): Promise<boolean> => {
+    if (!video) return false;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
+        audio: false,
+      });
+      video.srcObject = stream;
+      video.playsInline = true;
+      video.muted = true;
+      await video.play();
+      return true;
+    } catch (e) {
+      console.error("[gesture] camera failed", e);
+      return false;
+    }
+  }, [video]);
+
+  return { ready, error, requestCamera };
 }
 
-/** 5 帧多数投票，open/fist 需至少出现 3 次才认定，否则沿用最近原始值。 */
 class GestureFilter {
   private buf: GestureState[] = [];
   private readonly size = 5;

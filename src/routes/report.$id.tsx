@@ -5,6 +5,7 @@ import { Stage } from "@/components/Stage";
 import { DIM_LABEL, itemById } from "@/data/hotpot";
 import { decodeSummary } from "@/lib/scoring";
 import { buildReport } from "@/lib/mockReport";
+import { generateStory } from "@/lib/llm";
 
 export const Route = createFileRoute("/report/$id")({
   head: ({ params }) => ({
@@ -106,6 +107,38 @@ function Report() {
   const summary = useMemo(() => decodeSummary(id), [id]);
   const [qr, setQr] = useState<string | null>(null);
   const [isFlipped, setIsFlipped] = useState(false);
+  const [story, setStory] = useState<string>("");
+  const [storyLoading, setStoryLoading] = useState(false);
+  const [storyError, setStoryError] = useState(false);
+
+  const fetchStory = async () => {
+    if (!summary) return;
+    setStoryLoading(true);
+    setStoryError(false);
+    try {
+      const s = await generateStory(summary, "");
+      if (s) {
+        setStory(s);
+      } else {
+        setStoryError(true);
+      }
+    } catch {
+      setStoryError(true);
+    } finally {
+      setStoryLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (summary) {
+      if (summary.story) {
+        setStory(summary.story);
+        setStoryError(false);
+      } else {
+        fetchStory();
+      }
+    }
+  }, [summary]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -119,10 +152,9 @@ function Report() {
   }, [id]);
 
   const report = useMemo(() => (summary ? buildReport(summary) : null), [summary]);
+  const parsed = useMemo(() => parseStory(story), [story]);
+
   if (!summary || !report) return <ReportError />;
-  // 优先用生成时烤进链接的 AI 故事;没有则回落模板
-  const storyText = summary.story ?? report.story;
-  const parsed = parseStory(storyText);
   const chosenNames = [...summary.base, ...summary.ingredients, ...summary.condiments]
     .map((id) => itemById(id)?.name)
     .filter(Boolean)
@@ -353,7 +385,7 @@ function Report() {
               <div style={{ flex: "1 1 auto", minHeight: 12 }} />
 
               {/* 命运点题:锅名 + 一句命运总结 */}
-              {parsed.title && (
+              {parsed.title ? (
                 <div
                   style={{
                     fontFamily: serif,
@@ -366,8 +398,33 @@ function Report() {
                 >
                   {parsed.title}
                 </div>
-              )}
-              {parsed.slogan && (
+              ) : storyLoading ? (
+                <div
+                  style={{
+                    fontFamily: serif,
+                    fontWeight: 700,
+                    fontSize: 16,
+                    color: "#9a6b3a",
+                    position: "relative",
+                    animation: "lhPulse 1.5s infinite",
+                  }}
+                >
+                  [ AI 正在结合火锅推演命运之名... ]
+                </div>
+              ) : storyError ? (
+                <div
+                  style={{
+                    fontFamily: serif,
+                    fontSize: 14,
+                    color: "#b4382b",
+                    position: "relative",
+                  }}
+                >
+                  [ 命运故事生成失败 ]
+                </div>
+              ) : null}
+
+              {parsed.slogan ? (
                 <div
                   style={{
                     fontFamily: serif,
@@ -380,10 +437,24 @@ function Report() {
                 >
                   {parsed.slogan}
                 </div>
-              )}
+              ) : storyLoading ? (
+                <div
+                  style={{
+                    fontFamily: serif,
+                    fontSize: 11,
+                    color: "#8a6a44",
+                    marginTop: 8,
+                    position: "relative",
+                    opacity: 0.85,
+                    animation: "lhPulse 1.5s infinite",
+                  }}
+                >
+                  “正在连线命运星空，推演人生轨迹...”
+                </div>
+              ) : null}
 
               {/* 虚线分割线 */}
-              {parsed.observer && (
+              {(parsed.observer || storyLoading || storyError) && (
                 <div
                   style={{
                     height: 1,
@@ -394,7 +465,7 @@ function Report() {
               )}
 
               {/* AI观察员评价 */}
-              {parsed.observer && (
+              {parsed.observer ? (
                 <div
                   style={{
                     position: "relative",
@@ -444,7 +515,70 @@ function Report() {
                     {parsed.observer}
                   </div>
                 </div>
-              )}
+              ) : storyLoading ? (
+                <div
+                  style={{
+                    position: "relative",
+                    background: "rgba(154,123,74,.02)",
+                    border: "1px dashed rgba(154,123,74,.18)",
+                    borderRadius: 8,
+                    padding: "16px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 10,
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 14,
+                      height: 14,
+                      border: "2px solid rgba(202,160,90,.3)",
+                      borderTopColor: "#caa05a",
+                      borderRadius: "50%",
+                      animation: "lhSpin .8s linear infinite",
+                      display: "inline-block",
+                    }}
+                  />
+                  <span style={{ fontSize: 11, color: "#9a6b3a", letterSpacing: ".1em", animation: "lhPulse 1.5s infinite" }}>
+                    AI 观察员正在为您撰写评语...
+                  </span>
+                </div>
+              ) : storyError ? (
+                <div
+                  style={{
+                    position: "relative",
+                    background: "rgba(180,56,43,.02)",
+                    border: "1px dashed rgba(180,56,43,.25)",
+                    borderRadius: 8,
+                    padding: "14px 18px",
+                    textAlign: "center",
+                  }}
+                >
+                  <div style={{ fontSize: 11, color: "#b4382b", marginBottom: 8 }}>
+                    大模型评语撰写失败
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      fetchStory();
+                    }}
+                    style={{
+                      border: "1px solid #b4382b",
+                      background: "transparent",
+                      color: "#b4382b",
+                      padding: "4px 12px",
+                      borderRadius: 6,
+                      fontSize: 11,
+                      cursor: "pointer",
+                      fontFamily: serif,
+                      fontWeight: 700,
+                    }}
+                  >
+                    重新推演命运
+                  </button>
+                </div>
+              ) : null}
 
               {/* 切换到背面的按钮 */}
               <div
@@ -619,9 +753,50 @@ function Report() {
                     lineHeight: 1.65,
                     color: "#3a2c1c",
                     whiteSpace: "pre-line",
+                    display: (storyLoading || storyError) ? "flex" : "block",
+                    flexDirection: "column",
+                    alignItems: (storyLoading || storyError) ? "center" : "stretch",
+                    justifyContent: (storyLoading || storyError) ? "center" : "flex-start",
                   }}
                 >
-                  {parsed.narrative || storyText}
+                  {storyLoading ? (
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, color: "#caa05a" }}>
+                      <span
+                        style={{
+                          width: 20,
+                          height: 20,
+                          border: "2px solid rgba(202,160,90,.3)",
+                          borderTopColor: "#caa05a",
+                          borderRadius: "50%",
+                          animation: "lhSpin .8s linear infinite",
+                          display: "inline-block",
+                        }}
+                      />
+                      <span style={{ fontSize: 13, fontFamily: serif }}>AI 正在为您撰写命运故事...</span>
+                    </div>
+                  ) : storyError ? (
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, padding: "20px 0" }}>
+                      <span style={{ color: "#b4382b", fontSize: 13, fontFamily: serif }}>命运故事推演失败，未生成内容。</span>
+                      <button
+                        onClick={fetchStory}
+                        style={{
+                          border: "1.5px solid #b4382b",
+                          background: "transparent",
+                          color: "#b4382b",
+                          padding: "6px 18px",
+                          borderRadius: 6,
+                          cursor: "pointer",
+                          fontFamily: serif,
+                          fontWeight: 700,
+                          fontSize: 12,
+                        }}
+                      >
+                        重新生成
+                      </button>
+                    </div>
+                  ) : (
+                    parsed.narrative || story
+                  )}
                 </div>
 
                 {/* 底部: 扫码保存 + 按钮 */}

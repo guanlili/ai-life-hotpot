@@ -282,7 +282,7 @@ function Report() {
       } else {
         // PC/Desktop: trigger direct download as a file
         const link = document.createElement("a");
-        link.download = `我的人生火锅报告_${summary.nickname || "分享"}.png`;
+        link.download = `我的人生火锅报告_${summary?.nickname || "分享"}.png`;
         link.href = dataUrl;
         document.body.appendChild(link);
         link.click();

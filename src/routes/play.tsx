@@ -899,6 +899,7 @@ function IngStep({
   onToggleGesture?: () => void;
 }) {
   const isPortrait = useIsPortrait();
+  const { width: winWidth } = useWindowSize();
   const ring = useMemo(
     () =>
       INGREDIENTS.map((it, i) => {

@@ -155,7 +155,7 @@ export function GestureGameLayer({
               filter: f.grabbed ? "drop-shadow(0 0 8px rgba(255,200,0,0.8))" : "none",
             }}
           >
-            <FoodGlyph food={f.food as any} kind={f.kind} />
+            <FoodGlyph name={f.food} />
           </div>
           {f.grabbed && (
             <div

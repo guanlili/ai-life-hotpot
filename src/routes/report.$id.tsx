@@ -79,13 +79,15 @@ function parseStory(raw: string): {
 } {
   const full = (raw ?? "").trim();
   if (!full) return { title: null, slogan: null, observer: null, narrative: "" };
-  // 观察员:【AI观察员评价】 或 "AI观察员评价：" 之后的内容
-  const obsRe = /【\s*AI\s*观察员评价\s*】|AI\s*观察员评价\s*[：:]/;
+  // 观察员:【AI观察员评价】 或 "AI观察员评价：" 之后的内容，兼容各种 Markdown 标记（如 ###, ** 等）和空格
+  const obsRe = /[#\s*_\-]*【?\s*AI\s*观\s*察\s*员\s*评\s*价\s*】?[\s*_\-]*[：:]?[\s*_\-]*/i;
   const obsIdx = full.search(obsRe);
   let observer: string | null = null;
   let body = full;
   if (obsIdx >= 0) {
-    observer = full.slice(obsIdx).replace(obsRe, "").replace(/^[\s：:]*/, "").trim();
+    observer = full.slice(obsIdx).replace(obsRe, "").trim();
+    // 进一步清理 observer 开头可能残留的冒号、星号、空格等 markdown 痕迹
+    observer = observer.replace(/^[:：\s*_\-]+/, "").trim();
     body = full.slice(0, obsIdx).trim();
   }
   // 标题:第一个《...》
@@ -94,11 +96,12 @@ function parseStory(raw: string): {
   // slogan:一对引号包住的短句(6~48 字)
   const sloganMatch = body.match(/["“''「『][^"”''」』\n]{6,48}。?["”''」』]/);
   const slogan = sloganMatch ? sloganMatch[0] : null;
-  // 正文去掉明显的结构标签行
+  // 正文去掉明显的结构标签行和各种 Markdown 标题前缀
   const narrative = body
-    .replace(/^[ \t]*你的命运火锅[ \t]*\r?\n?/m, "")
-    .replace(/^[ \t]*标题[ \t]*[：:][ \t]*\r?\n?/m, "")
-    .replace(/^[ \t]*一句命运总结[^\n]*\r?\n?/m, "")
+    .replace(/^[ \t#*_\-]*你的命运火锅[ \t*_\-]*\r?\n?/gim, "")
+    .replace(/^[ \t#*_\-]*标题[ \t*_\-]*[：:][ \t*_\-]*\r?\n?/gim, "")
+    .replace(/^[ \t#*_\-]*一句命运总结[^\n]*\r?\n?/gim, "")
+    .replace(/^[ \t#*_\-]*(人生故事|命运故事|故事详情|叙事故事)[ \t*_\-]*[：:]?[ \t*_\-]*\r?\n?/gim, "")
     .trim();
   return { title, slogan, observer, narrative: narrative || body };
 }

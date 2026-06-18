@@ -64,7 +64,7 @@ export const BASES: Base[] = [
     tone: "热烈",
     tagline: "敢爱敢恨，活得浓烈",
     color: "#b4382b",
-    image: "/images/bases/麻辣红汤.png",
+    image: "/images/bases/麻辣红汤.webp",
     weights: W([2, 3, 1, 1, 3]),
   },
   {
@@ -73,7 +73,7 @@ export const BASES: Base[] = [
     tone: "稳定",
     tagline: "把日子过得安稳踏实",
     color: "#d4663a",
-    image: "/images/bases/醇厚番茄.png",
+    image: "/images/bases/醇厚番茄.webp",
     weights: W([3, 2, 0, 4, 1]),
   },
   {
@@ -82,7 +82,7 @@ export const BASES: Base[] = [
     tone: "清醒",
     tagline: "看得透，活得明白",
     color: "#c8a86a",
-    image: "/images/bases/菌菇清汤.png",
+    image: "/images/bases/菌菇清汤.webp",
     weights: W([2, 1, 3, 1, 3]),
   },
   {
@@ -91,7 +91,7 @@ export const BASES: Base[] = [
     tone: "冒险",
     tagline: "偏要去试没走过的路",
     color: "#6f8f4a",
-    image: "/images/bases/藤椒青花椒.png",
+    image: "/images/bases/藤椒青花椒.webp",
     weights: W([2, 1, 4, 0, 3]),
   },
   {
@@ -100,7 +100,7 @@ export const BASES: Base[] = [
     tone: "治愈",
     tagline: "先把自己好好照顾",
     color: "#cf9a6a",
-    image: "/images/bases/猪骨养生.png",
+    image: "/images/bases/猪骨养生.webp",
     weights: W([1, 3, 1, 4, 1]),
   },
   {
@@ -109,7 +109,7 @@ export const BASES: Base[] = [
     tone: "自由",
     tagline: "不被定义，自有节奏",
     color: "#7fa6b0",
-    image: "/images/bases/清水自在.png",
+    image: "/images/bases/清水自在.webp",
     weights: W([1, 1, 5, 1, 2]),
   },
 ];
@@ -228,16 +228,16 @@ export const INGREDIENTS: Ingredient[] = [
 ];
 
 export const CONDIMENTS: Condiment[] = [
-  { id: "garlic", name: "蒜蓉", style: "辛香", color: "#ece3c8", image: "/images/condiments/蒜蓉.png", weights: W([1, 0, 0, 1, 0]) },
-  { id: "cilantro", name: "香菜", style: "清香", color: "#4f8a3a", image: "/images/condiments/香菜.png", weights: W([0, 1, 1, 0, 1]) },
-  { id: "chili", name: "小米辣", style: "辛辣", color: "#c23a1c", image: "/images/condiments/小米辣.png", weights: W([1, 0, 1, 0, 1]) },
-  { id: "scallion", name: "葱花", style: "清爽", color: "#6fae3a", image: "/images/condiments/葱花.png", weights: W([0, 1, 1, 0, 0]) },
-  { id: "sesame", name: "芝麻", style: "醇香", color: "#d8c89a", image: "/images/condiments/芝麻.png", weights: W([0, 1, 0, 1, 0]) },
-  { id: "peanut", name: "花生碎", style: "浓郁", color: "#cda06a", image: "/images/condiments/花生碎.png", weights: W([1, 0, 0, 1, 0]) },
-  { id: "oyster", name: "蚝油", style: "鲜美", color: "#6a4a2a", image: "/images/condiments/蚝油.png", weights: W([1, 0, 0, 1, 1]) },
-  { id: "vinegar", name: "醋", style: "酸爽", color: "#5a3018", image: "/images/condiments/醋.png", weights: W([0, 0, 1, 1, 1]) },
-  { id: "sesameoil", name: "香油", style: "香浓", color: "#d9a73a", image: "/images/condiments/香油.png", weights: W([0, 2, 0, 1, 0]) },
-  { id: "chilioil", name: "辣椒油", style: "油辣", color: "#b4321c", image: "/images/condiments/辣椒油.png", weights: W([1, 1, 0, 0, 1]) },
+  { id: "garlic", name: "蒜蓉", style: "辛香", color: "#ece3c8", image: "/images/condiments/蒜蓉.webp", weights: W([1, 0, 0, 1, 0]) },
+  { id: "cilantro", name: "香菜", style: "清香", color: "#4f8a3a", image: "/images/condiments/香菜.webp", weights: W([0, 1, 1, 0, 1]) },
+  { id: "chili", name: "小米辣", style: "辛辣", color: "#c23a1c", image: "/images/condiments/小米辣.webp", weights: W([1, 0, 1, 0, 1]) },
+  { id: "scallion", name: "葱花", style: "清爽", color: "#6fae3a", image: "/images/condiments/葱花.webp", weights: W([0, 1, 1, 0, 0]) },
+  { id: "sesame", name: "芝麻", style: "醇香", color: "#d8c89a", image: "/images/condiments/芝麻.webp", weights: W([0, 1, 0, 1, 0]) },
+  { id: "peanut", name: "花生碎", style: "浓郁", color: "#cda06a", image: "/images/condiments/花生碎.webp", weights: W([1, 0, 0, 1, 0]) },
+  { id: "oyster", name: "蚝油", style: "鲜美", color: "#6a4a2a", image: "/images/condiments/蚝油.webp", weights: W([1, 0, 0, 1, 1]) },
+  { id: "vinegar", name: "醋", style: "酸爽", color: "#5a3018", image: "/images/condiments/醋.webp", weights: W([0, 0, 1, 1, 1]) },
+  { id: "sesameoil", name: "香油", style: "香浓", color: "#d9a73a", image: "/images/condiments/香油.webp", weights: W([0, 2, 0, 1, 0]) },
+  { id: "chilioil", name: "辣椒油", style: "油辣", color: "#b4321c", image: "/images/condiments/辣椒油.webp", weights: W([1, 1, 0, 0, 1]) },
 ];
 
 export const ALL_ITEMS = [...BASES, ...INGREDIENTS, ...CONDIMENTS];

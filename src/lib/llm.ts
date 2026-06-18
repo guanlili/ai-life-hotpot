@@ -7,24 +7,18 @@ import { buildReport } from "./mockReport";
 import type { SelectionSummary } from "./scoring";
 
 const BASE = "https://tokendance.space/gateway/v1";
-const KEY_STORAGE = "hotpot:llm-key";
 
 export const LLM_MODEL_STORY = "deepseek-v4-pro";
 export const LLM_MODEL_VISION = "minimax-m3";
 
-/** 读取用户本机存的 key(仅浏览器端有值) */
-export function getLLMKey(): string {
-  if (typeof window === "undefined") return "";
-  return window.localStorage.getItem(KEY_STORAGE) ?? "";
-}
-export function setLLMKey(key: string): void {
-  if (typeof window === "undefined") return;
-  const v = key.trim();
-  if (v) window.localStorage.setItem(KEY_STORAGE, v);
-  else window.localStorage.removeItem(KEY_STORAGE);
-}
-export function hasLLMKey(): boolean {
-  return getLLMKey().length > 0;
+/**
+ * 读取内置在前端配置(VITE_LLM_KEY)里的 key。
+ * 通过 .env 的 VITE_LLM_KEY 在构建时烤进产物。
+ * ⚠️ 因此 key 会出现在公开 bundle 中,仅适合额度受限的一次性 demo key。
+ */
+function getLLMKey(): string {
+  const k = import.meta.env.VITE_LLM_KEY;
+  return typeof k === "string" ? k.trim() : "";
 }
 
 type TextPart = { type: "text"; text: string };

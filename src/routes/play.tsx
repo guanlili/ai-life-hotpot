@@ -1546,7 +1546,7 @@ function ObserverPanel({
     .join(" · ");
   const copy =
     step === "base"
-      ? "锅底决定人生底色，第一下通常最诚实。"
+      ? "先选一口顺眼的锅。"
       : step === "ingredients"
         ? `人生值剩余 ${lifeLeft}，越早下锅的选择权重越高。`
         : step === "sauce"

@@ -34,6 +34,7 @@ export interface Base {
   tone: string; // 人生基调
   tagline: string; // 一句话
   color: string; // 锅底颜色(锅 tint)
+  image: string; // 锅底图片路径(public 目录)
   weights: Weights;
 }
 
@@ -62,6 +63,7 @@ export const BASES: Base[] = [
     tone: "热烈",
     tagline: "敢爱敢恨，活得浓烈",
     color: "#b4382b",
+    image: "/images/bases/麻辣红汤.png",
     weights: W([2, 3, 1, 1, 3]),
   },
   {
@@ -70,6 +72,7 @@ export const BASES: Base[] = [
     tone: "稳定",
     tagline: "把日子过得安稳踏实",
     color: "#d4663a",
+    image: "/images/bases/醇厚番茄.png",
     weights: W([3, 2, 0, 4, 1]),
   },
   {
@@ -78,6 +81,7 @@ export const BASES: Base[] = [
     tone: "清醒",
     tagline: "看得透，活得明白",
     color: "#c8a86a",
+    image: "/images/bases/菌菇清汤.png",
     weights: W([2, 1, 3, 1, 3]),
   },
   {
@@ -86,6 +90,7 @@ export const BASES: Base[] = [
     tone: "冒险",
     tagline: "偏要去试没走过的路",
     color: "#6f8f4a",
+    image: "/images/bases/藤椒青花椒.png",
     weights: W([2, 1, 4, 0, 3]),
   },
   {
@@ -94,6 +99,7 @@ export const BASES: Base[] = [
     tone: "治愈",
     tagline: "先把自己好好照顾",
     color: "#cf9a6a",
+    image: "/images/bases/猪骨养生.png",
     weights: W([1, 3, 1, 4, 1]),
   },
   {
@@ -102,6 +108,7 @@ export const BASES: Base[] = [
     tone: "自由",
     tagline: "不被定义，自有节奏",
     color: "#7fa6b0",
+    image: "/images/bases/清水自在.png",
     weights: W([1, 1, 5, 1, 2]),
   },
 ];

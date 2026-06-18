@@ -257,15 +257,11 @@ function Play() {
 
   const toggleBase = (id: string) => {
     if (bases.includes(id)) {
-      setBases(bases.filter((x) => x !== id));
-      return;
-    }
-    if (bases.length >= 2) {
-      setPickToast("锅底最多选择两个哦");
+      setBases([]);
       return;
     }
     recordPick(id);
-    setBases([...bases, id]);
+    setBases([id]);
   };
   const meatPicked = ings.filter(
     (id) => INGREDIENTS.find((i) => i.id === id)?.kind === "meat",
@@ -293,8 +289,9 @@ function Play() {
   const usedLife = ings.reduce((s, id) => s + (INGREDIENTS.find((i) => i.id === id)?.cost ?? 0), 0);
   const lifeLeft = Math.max(0, 100 - usedLife);
 
-  const leftColor = bases[0] ? baseById(bases[0])?.color : undefined;
-  const rightColor = bases[1] ? baseById(bases[1])?.color : undefined;
+  const selectedBase = bases[0] ? baseById(bases[0]) : undefined;
+  const baseImage = selectedBase?.image;
+  const baseColor = selectedBase?.color;
 
   const goReport = () => {
     const sess = loadSession();
@@ -316,8 +313,8 @@ function Play() {
       {step === "base" && (
         <BaseStep
           bases={bases}
-          leftColor={leftColor}
-          rightColor={rightColor}
+          baseImage={baseImage}
+          baseColor={baseColor}
           onPick={toggleBase}
           onNext={() => setStep("ingredients")}
         />
@@ -325,15 +322,15 @@ function Play() {
       {step === "ingredients" && (
         <>
           <IngStep
-            ings={ings}
-            meatPicked={meatPicked}
-            vegPicked={vegPicked}
-            leftColor={leftColor}
-            rightColor={rightColor}
-            secs={secs}
-            lifeLeft={lifeLeft}
-            onToggle={toggleIng}
-            onNext={() => setStep("sauce")}
+             ings={ings}
+             meatPicked={meatPicked}
+             vegPicked={vegPicked}
+             baseImage={baseImage}
+             baseColor={baseColor}
+             secs={secs}
+             lifeLeft={lifeLeft}
+             onToggle={toggleIng}
+             onNext={() => setStep("sauce")}
             gestureEnabled={gestureEnabled}
             onToggleGesture={() => setGestureEnabled(!gestureEnabled)}
           />
@@ -363,8 +360,8 @@ function Play() {
           boilStep={boilStep}
           boilReady={boilReady}
           storyLoading={storyLoading}
-          leftColor={leftColor}
-          rightColor={rightColor}
+          baseImage={baseImage}
+          baseColor={baseColor}
           onReport={goReport}
         />
       )}
@@ -380,17 +377,17 @@ function Play() {
   );
 }
 
-/* ============ 锅底(选两个 → 太极双鱼) ============ */
+/* ============ 锅底(选一个口味) ============ */
 function BaseStep({
   bases,
-  leftColor,
-  rightColor,
+  baseImage,
+  baseColor,
   onPick,
   onNext,
 }: {
   bases: string[];
-  leftColor?: string;
-  rightColor?: string;
+  baseImage?: string;
+  baseColor?: string;
   onPick: (id: string) => void;
   onNext: () => void;
 }) {
@@ -398,10 +395,10 @@ function BaseStep({
     <>
       <ScreenHead
         step="第一步"
-        title="择 锅 底 · 阴 阳 成 锅"
-        sub={`已选 ${bases.length} / 2 个 · 最多选两个，可不选`}
+        title="择 锅 底 · 定 基 调"
+        sub={`已选 ${bases.length} / 1 个 · 选一种口味，可不选`}
       />
-      <CenterPot size={340} left={leftColor} right={rightColor} />
+      <CenterPot size={340} baseImage={baseImage} baseColor={baseColor} />
       {BASES.map((b, i) => {
         const idx = bases.indexOf(b.id);
         const sel = idx >= 0;
@@ -444,26 +441,26 @@ function BaseStep({
                 width: 66,
                 height: 66,
                 borderRadius: "50%",
-                background: "radial-gradient(circle at 50% 34%,#f6efe0,#d6c6a0 78%)",
-                border: "1.5px solid rgba(90,68,42,.4)",
-                boxShadow: "0 8px 18px rgba(90,70,40,.2), inset 0 2px 6px rgba(255,255,255,.55)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
+                border: sel ? `2px solid ${b.color}` : "1.5px solid rgba(90,68,42,.4)",
+                boxShadow: sel
+                  ? `0 8px 18px rgba(90,70,40,.25), 0 0 0 3px ${b.color}33`
+                  : "0 8px 18px rgba(90,70,40,.2)",
+                overflow: "hidden",
                 position: "relative",
+                transition: "border-color .22s ease, box-shadow .22s ease",
               }}
             >
-              <div
+              <img
+                src={b.image}
+                alt={b.name}
                 style={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: "50%",
-                  background: b.color,
-                  boxShadow:
-                    "inset 0 -6px 12px rgba(0,0,0,.25), inset 0 4px 8px rgba(255,255,255,.25)",
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  display: "block",
                 }}
               />
-              {sel && <SelectBadge label={idx + 1} />}
+              {sel && <SelectBadge label="✓" />}
             </div>
             <div style={{ minWidth: 0, flex: 1, textAlign: leftSide ? "left" : "right" }}>
               {/* 只露锅底名字，藏起含义(tone/tagline),让选择更凭直觉 */}
@@ -743,8 +740,8 @@ function IngStep({
   ings,
   meatPicked,
   vegPicked,
-  leftColor,
-  rightColor,
+  baseImage,
+  baseColor,
   secs,
   lifeLeft,
   onToggle,
@@ -755,8 +752,8 @@ function IngStep({
   ings: string[];
   meatPicked: number;
   vegPicked: number;
-  leftColor?: string;
-  rightColor?: string;
+  baseImage?: string;
+  baseColor?: string;
   secs: number;
   lifeLeft: number;
   onToggle: (id: string) => void;
@@ -833,7 +830,7 @@ function IngStep({
         </div>
       </div>
 
-      <CenterPot size={340} left={leftColor} right={rightColor} bits={ings} />
+      <CenterPot size={340} baseImage={baseImage} baseColor={baseColor} bits={ings} />
 
       {/* 荤(右) / 素(左) 分区提示 */}
       <SideTag char="荤" sub="MEAT" x={904} count={meatPicked} tone="#9a3a2c" />
@@ -1402,15 +1399,15 @@ function BoilStep({
   boilStep,
   boilReady,
   storyLoading,
-  leftColor,
-  rightColor,
+  baseImage,
+  baseColor,
   onReport,
 }: {
   boilStep: number;
   boilReady: boolean;
   storyLoading: boolean;
-  leftColor?: string;
-  rightColor?: string;
+  baseImage?: string;
+  baseColor?: string;
   onReport: () => void;
 }) {
   const [tipIndex, setTipIndex] = useState(0);
@@ -1495,7 +1492,20 @@ function BoilStep({
             />
           ))}
         </div>
-        <YuanyangPot left={leftColor} right={rightColor} />
+        {baseImage ? (
+          <div style={{
+            position: "absolute",
+            inset: 0,
+            borderRadius: "50%",
+            overflow: "hidden",
+            border: "4px solid #9a7b4a",
+            boxShadow: "0 0 0 6px rgba(90,70,40,.2), inset 0 0 30px rgba(0,0,0,.15)",
+          }}>
+            <img src={baseImage} alt="锅底" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+          </div>
+        ) : (
+          <YuanyangPot />
+        )}
         <div
           style={{
             position: "absolute",
@@ -1903,13 +1913,13 @@ function potIngredientStyle(food: string, tint: string, i: number): CSSPropertie
 
 function CenterPot({
   size,
-  left,
-  right,
+  baseImage,
+  baseColor,
   bits,
 }: {
   size: number;
-  left?: string;
-  right?: string;
+  baseImage?: string;
+  baseColor?: string;
   bits?: string[];
 }) {
   return (
@@ -1924,7 +1934,33 @@ function CenterPot({
           height: size,
         }}
       >
-        <YuanyangPot left={left} right={right} />
+        {baseImage ? (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              borderRadius: "50%",
+              overflow: "hidden",
+              border: `4px solid ${baseColor ?? "#9a7b4a"}`,
+              boxShadow: `0 0 0 6px ${baseColor ? baseColor + "33" : "rgba(90,70,40,.2)"}, 0 12px 32px rgba(60,40,20,.25), inset 0 0 20px rgba(0,0,0,.1)`,
+              transition: "border-color .3s ease, box-shadow .3s ease",
+            }}
+          >
+            <img
+              src={baseImage}
+              alt="锅底"
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                display: "block",
+                transition: "opacity .3s ease",
+              }}
+            />
+          </div>
+        ) : (
+          <YuanyangPot />
+        )}
         {bits && bits.length > 0 && (
           <>
             {bits.map((id, i) => {

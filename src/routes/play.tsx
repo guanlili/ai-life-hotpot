@@ -227,6 +227,10 @@ function Play() {
       setBases(bases.filter((x) => x !== id));
       return;
     }
+    if (bases.length >= 2) {
+      setPickToast("锅底最多选择两个哦");
+      return;
+    }
     recordPick(id);
     setBases([...bases, id]);
   };
@@ -375,7 +379,7 @@ function BaseStep({
       <ScreenHead
         step="第一步"
         title="择 锅 底 · 阴 阳 成 锅"
-        sub={`已选 ${bases.length} 个 · 多少不限，可不选`}
+        sub={`已选 ${bases.length} / 2 个 · 最多选两个，可不选`}
       />
       <CenterPot size={340} left={leftColor} right={rightColor} />
       {BASES.map((b, i) => {
@@ -1457,7 +1461,7 @@ function ObserverPanel({
       : step === "ingredients"
         ? `金币剩余 ${lifeLeft}，越早下锅的选择权重越高。`
         : step === "sauce"
-          ? "蘸料会改变处理事情的方式，想加几味加几味。"
+          ? "蘸料是人生的点缀，想配几味配几味。"
           : "火锅正在沸腾，AI 正把选择顺序与犹豫时间合成报告。";
   return (
     <div

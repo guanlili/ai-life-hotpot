@@ -140,6 +140,7 @@ export async function generateStory(summary: SelectionSummary, photoFeatures?: s
 - 不要直接引用任何分数。
 - 不要暴露分析过程。
 - 不要提及"财富占比""爱情占比"等字样。
+- 不要将灵魂蘸料与性格、人设或行为风格强行挂钩/解释，蘸料仅代表人生的细节调味与风味点缀。
 - 用户不应感觉自己在看测试结果，而应感觉：AI 看见了自己未来的人生。
 
 第一步｜内部分析（不要输出）

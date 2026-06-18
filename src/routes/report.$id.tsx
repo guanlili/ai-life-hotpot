@@ -105,11 +105,15 @@ function parseStory(raw: string): {
 function Report() {
   const { id } = Route.useParams();
   const summary = useMemo(() => decodeSummary(id), [id]);
+  const report = useMemo(() => (summary ? buildReport(summary) : null), [summary]);
+
   const [qr, setQr] = useState<string | null>(null);
   const [isFlipped, setIsFlipped] = useState(false);
   const [story, setStory] = useState<string>("");
   const [storyLoading, setStoryLoading] = useState(false);
   const [storyError, setStoryError] = useState(false);
+
+  const parsed = useMemo(() => parseStory(story), [story]);
 
   const fetchStory = async () => {
     if (!summary) return;
@@ -154,9 +158,6 @@ function Report() {
       .then(setQr)
       .catch(() => setQr(null));
   }, [id]);
-
-  const report = useMemo(() => (summary ? buildReport(summary) : null), [summary]);
-  const parsed = useMemo(() => parseStory(story), [story]);
 
   if (!summary || !report) return <ReportError />;
   const chosenNames = [...summary.base, ...summary.ingredients, ...summary.condiments]

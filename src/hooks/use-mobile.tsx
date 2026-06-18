@@ -17,3 +17,19 @@ export function useIsMobile() {
 
   return !!isMobile;
 }
+
+export function useIsPortrait() {
+  const [isPortrait, setIsPortrait] = React.useState<boolean>(false);
+
+  React.useEffect(() => {
+    const check = () => {
+      setIsPortrait(window.innerHeight > window.innerWidth);
+    };
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  return isPortrait;
+}
+

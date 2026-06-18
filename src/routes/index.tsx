@@ -3,6 +3,7 @@ import { useState, type CSSProperties } from "react";
 import { Stage } from "@/components/Stage";
 import { YuanyangPot } from "@/components/hotpot-art";
 import { loadSession, saveSession } from "@/lib/session";
+import { useIsPortrait } from "@/hooks/use-mobile";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -180,8 +181,223 @@ function RitualTrack() {
   );
 }
 
+function RitualTrackMobile() {
+  const steps = [
+    ["拍照", "读取气质"],
+    ["择锅", "决定底色"],
+    ["下菜", "分配金币"],
+    ["沸腾", "生成报告"],
+  ];
+  return (
+    <div
+      style={{
+        width: "100%",
+        maxWidth: 320,
+        margin: "24px auto 12px",
+        display: "grid",
+        gridTemplateColumns: "repeat(4,1fr)",
+        alignItems: "start",
+        position: "relative",
+        animation: "lhFade .8s ease .15s both",
+      }}
+    >
+      <div
+        style={{
+          position: "absolute",
+          left: 30,
+          right: 30,
+          top: 13,
+          height: 1,
+          background: "linear-gradient(90deg,transparent,rgba(154,107,58,.45),transparent)",
+        }}
+      />
+      {steps.map(([name, desc], i) => (
+        <div
+          key={name}
+          style={{
+            position: "relative",
+            textAlign: "center",
+          }}
+        >
+          <div
+            style={{
+              width: 26,
+              height: 26,
+              borderRadius: "50%",
+              margin: "0 auto",
+              background: i === 0 ? "#b4382b" : "rgba(244,237,221,.74)",
+              border: "1px solid rgba(154,107,58,.42)",
+              boxShadow: i === 0 ? "0 0 0 5px rgba(180,56,43,.08)" : "0 4px 10px rgba(90,70,40,.06)",
+              display: "grid",
+              placeItems: "center",
+              color: i === 0 ? "#f4eddd" : "#9a6b3a",
+              fontFamily: serif,
+              fontWeight: 900,
+              fontSize: 11,
+            }}
+          >
+            {i + 1}
+          </div>
+          <div
+            style={{
+              fontFamily: serif,
+              fontWeight: 800,
+              fontSize: 13,
+              color: "#2c2418",
+              letterSpacing: ".05em",
+              marginTop: 6,
+            }}
+          >
+            {name}
+          </div>
+          <div style={{ marginTop: 2, fontSize: 9, color: "#8a6a44", transform: "scale(0.95)" }}>
+            {desc}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function Index() {
   const [nickname, setNickname] = useState(() => loadSession().nickname ?? "");
+  const isPortrait = useIsPortrait();
+
+  if (isPortrait) {
+    return (
+      <Stage>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            minHeight: "100%",
+            padding: "24px 20px 40px",
+            alignItems: "center",
+            justifyContent: "space-between",
+            position: "relative",
+            boxSizing: "border-box",
+          }}
+        >
+          {/* Header */}
+          <div style={{ display: "flex", width: "100%", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+            <div style={{ textAlign: "left" }}>
+              <div style={{ fontSize: 11, letterSpacing: ".3em", color: "#9a6b3a" }}>A I  ·  L I F E  H O T P O T</div>
+              <div style={{ fontFamily: serif, fontWeight: 900, fontSize: 32, letterSpacing: ".1em", color: "#2c2418", marginTop: 6 }}>
+                人生火锅
+              </div>
+            </div>
+            <Seal text="人生之味" style={{ transform: "rotate(-6deg) scale(0.85)", transformOrigin: "top right" }} />
+          </div>
+
+          {/* Yuanyang Pot (Centered) */}
+          <div style={{
+            position: "relative",
+            width: 180,
+            height: 180,
+            margin: "20px auto",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center"
+          }}>
+            <Steam />
+            <div
+              style={{
+                position: "absolute",
+                inset: -20,
+                borderRadius: "50%",
+                border: "1px solid rgba(180,56,43,.18)",
+                animation: "lhRingPulse 2.8s ease-in-out infinite",
+              }}
+            />
+            <YuanyangPot left="#b4382b" right="#e9d9b2" />
+          </div>
+
+          {/* Ritual Track Mobile */}
+          <RitualTrackMobile />
+
+          {/* Footer Form & CTA */}
+          <div style={{
+            width: "100%",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 16,
+            marginTop: 20,
+          }}>
+            <label
+              style={{
+                display: "inline-flex",
+                alignItems: "stretch",
+                borderRadius: 7,
+                overflow: "hidden",
+                border: "1.5px solid rgba(180,56,43,.55)",
+                boxShadow: "0 6px 16px rgba(150,40,30,.16)",
+                width: "100%",
+                maxWidth: 280,
+              }}
+            >
+              <span
+                style={{
+                  display: "grid",
+                  placeItems: "center",
+                  background: "#b4382b",
+                  color: "#f4eddd",
+                  fontFamily: serif,
+                  fontWeight: 800,
+                  fontSize: 15,
+                  letterSpacing: ".18em",
+                  padding: "0 14px",
+                }}
+              >
+                署名
+              </span>
+              <input
+                value={nickname}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setNickname(v);
+                  saveSession({ ...loadSession(), nickname: v.trim() ? v.trim() : undefined });
+                }}
+                placeholder="怎么称呼你？（可不填）"
+                maxLength={12}
+                style={{
+                  flex: 1,
+                  padding: "10px 12px",
+                  border: "none",
+                  background: "rgba(255,252,248,.72)",
+                  color: "#2c2418",
+                  fontFamily: serif,
+                  fontSize: 15,
+                  letterSpacing: ".08em",
+                  textAlign: "center",
+                  outline: "none",
+                }}
+              />
+            </label>
+
+            <Link to="/capture" className="lh-sweep" style={{ ...cta, marginTop: 10, width: "100%", maxWidth: 280, textAlign: "center", justifyContent: "center", padding: "14px 0", fontSize: 18 }}>
+              开始 · 煮一锅人生 <span style={{ fontSize: 16 }}>→</span>
+            </Link>
+
+            <div
+              style={{
+                fontFamily: serif,
+                fontWeight: 700,
+                fontSize: 14,
+                letterSpacing: ".08em",
+                color: "#5a4630",
+                textAlign: "center",
+                marginTop: 8,
+              }}
+            >
+              你以为自己在配火锅，<span style={{ color: "#b4382b" }}>其实正在构建人生。</span>
+            </div>
+          </div>
+        </div>
+      </Stage>
+    );
+  }
+
   return (
     <Stage>
       <CornerMarks />
@@ -208,7 +424,7 @@ function Index() {
           width: 340,
           height: 340,
           borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(95,143,122,.12), rgba(180,56,43,.05) 52%, rgba(180,56,43,0) 72%)",
+          background: "radial-gradient(circle at 50% 29.6%, rgba(95,143,122,.12), rgba(180,56,43,.05) 52%, rgba(180,56,43,0) 72%)",
           pointerEvents: "none",
         }}
       />

@@ -6,6 +6,7 @@ import { DIM_LABEL, itemById } from "@/data/hotpot";
 import { decodeSummary, encodeSummary } from "@/lib/scoring";
 import { buildReport } from "@/lib/mockReport";
 import { generateStory } from "@/lib/llm";
+import { useIsPortrait } from "@/hooks/use-mobile";
 
 export const Route = createFileRoute("/report/$id")({
   head: ({ params }) => ({
@@ -246,6 +247,8 @@ function RichText({ text, style }: { text: string; style?: CSSProperties }) {
 
 function Report() {
   const { id } = Route.useParams();
+  const isPortrait = useIsPortrait();
+
   const summary = useMemo(() => decodeSummary(id), [id]);
   const report = useMemo(() => (summary ? buildReport(summary) : null), [summary]);
 
@@ -323,7 +326,17 @@ function Report() {
   return (
     <Stage>
       <div
-        style={{
+        style={isPortrait ? {
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          width: "100%",
+          height: "100%",
+          padding: "16px 10px",
+          boxSizing: "border-box",
+          animation: "lhFade .5s ease both",
+        } : {
           position: "absolute",
           inset: 0,
           display: "flex",
@@ -334,7 +347,14 @@ function Report() {
         }}
       >
         {/* 3D 翻面人生火锅报告卡 */}
-        <div style={{ perspective: 1000, width: 460, height: 668, position: "relative" }}>
+        <div style={{
+          perspective: 1000,
+          width: isPortrait ? "calc(100vw - 32px)" : 460,
+          maxWidth: 460,
+          height: isPortrait ? "calc(100vh - 48px)" : 668,
+          maxHeight: 668,
+          position: "relative",
+        }}>
           <div
             style={{
               width: "100%",
@@ -356,8 +376,9 @@ function Report() {
                 borderRadius: 8,
                 boxShadow: "0 30px 70px rgba(60,40,20,.4)",
                 border: "1px solid rgba(154,123,74,.4)",
-                overflow: "hidden",
-                padding: "30px 34px 56px 34px",
+                overflowY: "auto",
+                WebkitOverflowScrolling: "touch",
+                padding: isPortrait ? "20px 20px 48px 20px" : "30px 34px 56px 34px",
                 color: "#2c2418",
                 display: "flex",
                 flexDirection: "column",
@@ -390,7 +411,7 @@ function Report() {
                     </div>
                   )}
                   <div
-                    style={{ fontFamily: serif, fontWeight: 900, fontSize: 23, letterSpacing: ".12em" }}
+                    style={{ fontFamily: serif, fontWeight: 900, fontSize: isPortrait ? 20 : 23, letterSpacing: ".12em" }}
                   >
                     人生火锅报告
                   </div>
@@ -439,7 +460,7 @@ function Report() {
                 style={{
                   fontFamily: serif,
                   fontWeight: 900,
-                  fontSize: 25,
+                  fontSize: isPortrait ? 21 : 25,
                   lineHeight: 1.35,
                   marginTop: 6,
                   color: "#7a2418",
@@ -453,19 +474,19 @@ function Report() {
               <div style={{ display: "flex", gap: 8, marginTop: 18, position: "relative" }}>
                 <div style={chipStyle}>
                   <div style={{ fontSize: 9, color: "#9a6b3a", letterSpacing: ".2em" }}>人生锅底</div>
-                  <div style={{ fontFamily: serif, fontWeight: 700, fontSize: 14, marginTop: 3 }}>
+                  <div style={{ fontFamily: serif, fontWeight: 700, fontSize: 13, marginTop: 3 }}>
                     {report.baseName}
                   </div>
                 </div>
                 <div style={chipStyle}>
                   <div style={{ fontSize: 9, color: "#9a6b3a", letterSpacing: ".2em" }}>核心食材</div>
-                  <div style={{ fontFamily: serif, fontWeight: 700, fontSize: 14, marginTop: 3 }}>
+                  <div style={{ fontFamily: serif, fontWeight: 700, fontSize: 13, marginTop: 3 }}>
                     {report.coreIng}
                   </div>
                 </div>
                 <div style={chipStyle}>
                   <div style={{ fontSize: 9, color: "#9a6b3a", letterSpacing: ".2em" }}>灵魂蘸料</div>
-                  <div style={{ fontFamily: serif, fontWeight: 700, fontSize: 14, marginTop: 3 }}>
+                  <div style={{ fontFamily: serif, fontWeight: 700, fontSize: 13, marginTop: 3 }}>
                     {report.soulSauce}
                   </div>
                 </div>
@@ -541,10 +562,11 @@ function Report() {
                   style={{
                     fontFamily: serif,
                     fontWeight: 900,
-                    fontSize: 21,
+                    fontSize: isPortrait ? 18 : 21,
                     lineHeight: 1.3,
                     color: "#7a2418",
                     position: "relative",
+                    marginTop: 10,
                   }}
                 >
                   {parsed.title}
@@ -554,7 +576,7 @@ function Report() {
                 <div
                   style={{
                     fontFamily: serif,
-                    fontSize: 13,
+                    fontSize: isPortrait ? 12 : 13,
                     lineHeight: 1.5,
                     color: "#5a4630",
                     marginTop: 8,
@@ -675,10 +697,11 @@ function Report() {
               {/* 底部版权 */}
               <div
                 style={{
-                  position: "absolute",
-                  left: 34,
-                  right: 34,
-                  bottom: 18,
+                  position: isPortrait ? "relative" : "absolute",
+                  left: isPortrait ? 0 : 34,
+                  right: isPortrait ? 0 : 34,
+                  bottom: isPortrait ? 0 : 18,
+                  marginTop: isPortrait ? 20 : 0,
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
@@ -705,7 +728,7 @@ function Report() {
                 pointerEvents: isFlipped ? "auto" : "none",
               }}
             >
-              {/* 内部卡片容器：避免在直接应用 rotateY 3D 变换的元素上应用 overflow 与 padding，从而解决 Mac 触摸板/滚轮的滚动判定 bug */}
+              {/* 内部卡片容器 */}
               <div
                 style={{
                   width: "100%",
@@ -715,7 +738,7 @@ function Report() {
                   boxShadow: "0 30px 70px rgba(60,40,20,.4)",
                   border: "1px solid rgba(154,123,74,.4)",
                   overflow: "hidden",
-                  padding: "30px 34px 56px 34px",
+                  padding: isPortrait ? "20px 20px 48px 20px" : "30px 34px 56px 34px",
                   color: "#2c2418",
                   display: "flex",
                   flexDirection: "column",
@@ -747,7 +770,7 @@ function Report() {
                       </div>
                     )}
                     <div
-                      style={{ fontFamily: serif, fontWeight: 900, fontSize: 23, letterSpacing: ".12em" }}
+                      style={{ fontFamily: serif, fontWeight: 900, fontSize: isPortrait ? 20 : 23, letterSpacing: ".12em" }}
                     >
                       命 运 故 事
                     </div>
@@ -871,6 +894,7 @@ function Report() {
                       padding: 5,
                       boxShadow: "inset 0 0 0 1px rgba(0,0,0,.06)",
                       flexShrink: 0,
+                      display: isPortrait ? "none" : "block",
                     }}
                   >
                     {qr ? (
@@ -881,10 +905,10 @@ function Report() {
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontFamily: serif, fontWeight: 700, fontSize: 13, color: "#2c2418" }}>
-                      扫码在手机端保存报告
+                      {isPortrait ? "您可以复制链接分享此报告" : "扫码在手机端保存报告"}
                     </div>
                     <div style={{ fontSize: 11, color: "#8a6a44", marginTop: 2, lineHeight: 1.4 }}>
-                      公网链接 · 手机可看
+                      {isPortrait ? "永久链接 · 多端可看" : "公网链接 · 手机可看"}
                     </div>
                     <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
                       <div
@@ -928,10 +952,11 @@ function Report() {
                 {/* 底部版权 */}
                 <div
                   style={{
-                    position: "absolute",
-                    left: 34,
-                    right: 34,
-                    bottom: 18,
+                    position: isPortrait ? "relative" : "absolute",
+                    left: isPortrait ? 0 : 34,
+                    right: isPortrait ? 0 : 34,
+                    bottom: isPortrait ? 0 : 18,
+                    marginTop: isPortrait ? 20 : 0,
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",

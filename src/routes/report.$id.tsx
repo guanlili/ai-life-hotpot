@@ -273,7 +273,18 @@ function Report() {
         cacheBust: true,
         pixelRatio: 2,
       });
-      setShareImage(dataUrl);
+      if (isPortrait) {
+        // Mobile screen: show full-screen overlay for long press saving
+        setShareImage(dataUrl);
+      } else {
+        // PC/Desktop: trigger direct download as a file
+        const link = document.createElement("a");
+        link.download = `我的人生火锅报告_${summary.nickname || "分享"}.png`;
+        link.href = dataUrl;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
     } catch (err) {
       console.error("Failed to generate image", err);
       alert("生成图片失败，请重试");
@@ -744,7 +755,7 @@ function Report() {
                   onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(154,123,74,.08)")}
                   onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(154,123,74,.04)")}
                 >
-                  <span>保存报告到手机</span>
+                  <span>保存报告到本地</span>
                   <span style={{ fontSize: 11 }}>📷</span>
                 </div>
               </div>
@@ -1001,7 +1012,7 @@ function Report() {
                           gap: 4,
                         }}
                       >
-                        <span>保存到手机</span>
+                        <span>保存到本地</span>
                         <span style={{ fontSize: 11 }}>📷</span>
                       </div>
                       <Link

@@ -9,7 +9,7 @@ import type { GestureState } from "@/hooks/useHandGesture";
 import { encodeSummary, type Pick, type SelectionSummary } from "@/lib/scoring";
 import { loadSession, saveSession } from "@/lib/session";
 import { generateStory } from "@/lib/llm";
-import { useIsPortrait } from "@/hooks/use-mobile";
+import { useIsPortrait, useWindowSize } from "@/hooks/use-mobile";
 
 type Step = "base" | "ingredients" | "sauce" | "boiling";
 
@@ -146,15 +146,39 @@ function Play() {
   const [story, setStory] = useState<string>("");
   const [storyLoading, setStoryLoading] = useState(false);
 
+  const isPortrait = useIsPortrait();
+  const { width: winWidth, height: winHeight } = useWindowSize();
+
   // Gesture game state
   const [gestureEnabled, setGestureEnabled] = useState(false);
   const [showGestureGuide, setShowGestureGuide] = useState(true);
   const [currentGesture, setCurrentGesture] = useState<GestureState>("none");
 
   // 初始食材（环形排布，避开锅）
-  const initialFoods = useMemo<GestureFood[]>(
-    () =>
-      INGREDIENTS.map((it, i) => {
+  const initialFoods = useMemo<GestureFood[]>(() => {
+    if (isPortrait) {
+      const cx = winWidth / 2;
+      const cy = 336;
+      const rx = Math.min(135, winWidth / 2 - 35);
+      const ry = 115;
+      return INGREDIENTS.map((it, i) => {
+        const a = -Math.PI / 2 + (i + 0.5) * ((2 * Math.PI) / INGREDIENTS.length);
+        const fx = cx + rx * Math.cos(a);
+        const fy = cy + ry * Math.sin(a);
+        return {
+          id: it.id,
+          name: it.name,
+          food: it.food,
+          kind: it.kind,
+          x: fx,
+          y: fy,
+          originX: fx,
+          originY: fy,
+          grabbed: false,
+        };
+      });
+    } else {
+      return INGREDIENTS.map((it, i) => {
         const a = -Math.PI / 2 + (i + 0.5) * ((2 * Math.PI) / INGREDIENTS.length);
         return {
           id: it.id,
@@ -167,9 +191,9 @@ function Play() {
           originY: C.cy + 200 * Math.sin(a),
           grabbed: false,
         };
-      }),
-    [],
-  );
+      });
+    }
+  }, [isPortrait, winWidth, winHeight]);
 
   const {
     foods: gestureFoods,
@@ -177,13 +201,15 @@ function Play() {
     grabbedId,
     moveCursor,
     feedGesture,
+    resetAll,
   } = useGestureGame({
     initialFoods,
-    gameW: GAME_W,
-    gameH: GAME_H,
-    hotpotX: C.cx,
-    hotpotY: C.cy,
-    hotpotR: HOTPOT_R,
+    gameW: isPortrait ? winWidth : GAME_W,
+    gameH: isPortrait ? winHeight : GAME_H,
+    hotpotX: isPortrait ? winWidth / 2 : C.cx,
+    hotpotY: isPortrait ? 336 : C.cy,
+    hotpotR: isPortrait ? 70 : HOTPOT_R,
+    grabR: isPortrait ? 35 : 55,
     onDropped: ({ foodId, dropped }) => {
       if (dropped) {
         recordPick(foodId);
@@ -191,6 +217,10 @@ function Play() {
       }
     },
   });
+
+  useEffect(() => {
+    resetAll();
+  }, [isPortrait, gestureEnabled, resetAll]);
 
   useEffect(() => {
     stepStartRef.current = Date.now();
@@ -218,7 +248,9 @@ function Play() {
     return () => clearInterval(id);
   }, [step]);
 
-  // 进入沸腾时用大模型生成人生故事(后台进行，沸腾动画与推演等待共同遮盖；无 key/失败则留空)
+  // 进入沸腾时用大模型生成人生故事(后台进行，沸腾动画与推演等待共同遮盖；无 key/失败则留空)。
+  // 沸腾为最后一步,进入时 bases/ings/conds 已是最终快照,故依赖仅 [step]——
+  // 否则沸腾期间这些数组若发生引用变化会重复发起 LLM 调用。active 标志兜底防止过期写入。
   useEffect(() => {
     if (step !== "boiling") return;
     const sess = loadSession();
@@ -240,7 +272,8 @@ function Play() {
     return () => {
       active = false;
     };
-  }, [step, bases, ings, conds]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
 
   const recordPick = (id: string) => {
     const now = Date.now();
@@ -309,7 +342,7 @@ function Play() {
   };
 
   return (
-    <Stage dark={step === "boiling"}>
+    <Stage dark={step === "boiling"} disableScroll={isPortrait && gestureEnabled && step === "ingredients"}>
       {step !== "boiling" && <StepRail step={step} />}
       {step === "base" && (
         <BaseStep
@@ -332,8 +365,8 @@ function Play() {
              lifeLeft={lifeLeft}
              onToggle={toggleIng}
              onNext={() => setStep("sauce")}
-            gestureEnabled={gestureEnabled}
-            onToggleGesture={() => setGestureEnabled(!gestureEnabled)}
+             gestureEnabled={gestureEnabled}
+             onToggleGesture={() => setGestureEnabled(!gestureEnabled)}
           />
           <GestureGameLayer
             enabled={gestureEnabled && step === "ingredients"}
@@ -345,7 +378,10 @@ function Play() {
               setCurrentGesture(gesture);
               feedGesture(gesture);
               if (detected) {
-                moveCursor(x * GAME_W, y * GAME_H);
+                moveCursor(
+                  x * (isPortrait ? winWidth : GAME_W),
+                  y * (isPortrait ? winHeight : GAME_H),
+                );
               }
             }}
             showGuide={showGestureGuide}
@@ -863,10 +899,14 @@ function IngStep({
   onToggleGesture?: () => void;
 }) {
   const isPortrait = useIsPortrait();
-  const ring = INGREDIENTS.map((it, i) => {
-    const a = -Math.PI / 2 + (i + 0.5) * ((2 * Math.PI) / 12);
-    return { it, x: C.cx + 440 * Math.cos(a), y: C.cy + 200 * Math.sin(a) };
-  });
+  const ring = useMemo(
+    () =>
+      INGREDIENTS.map((it, i) => {
+        const a = -Math.PI / 2 + (i + 0.5) * ((2 * Math.PI) / INGREDIENTS.length);
+        return { it, x: C.cx + 440 * Math.cos(a), y: C.cy + 200 * Math.sin(a) };
+      }),
+    [],
+  );
   const mm = Math.floor(secs / 60);
   const ss = String(secs % 60).padStart(2, "0");
   const timesUp = secs <= 0;
@@ -884,9 +924,35 @@ function IngStep({
   };
 
   if (isPortrait) {
-    const potY = 120;
+    const potY = gestureEnabled ? 260 : 120;
+    const cx = winWidth / 2;
+    const cy = 260;
+    const rx = Math.min(135, winWidth / 2 - 35);
+    const ry = 115;
+    const portraitRing = INGREDIENTS.map((it, i) => {
+      const a = -Math.PI / 2 + (i + 0.5) * ((2 * Math.PI) / INGREDIENTS.length);
+      return {
+        it,
+        x: cx + rx * Math.cos(a),
+        y: cy + ry * Math.sin(a),
+      };
+    });
+
     return (
-      <div style={{
+      <div style={gestureEnabled ? {
+        position: "absolute",
+        left: 0,
+        right: 0,
+        top: 76,
+        bottom: 0,
+        width: "100%",
+        height: "calc(100% - 76px)",
+        overflow: "hidden",
+        boxSizing: "border-box",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+      } : {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -912,116 +978,214 @@ function IngStep({
           <div style={{ fontSize: 11, color: "#8a6a44", marginTop: 4 }}>
             荤 {meatPicked} · 素 {vegPicked} · 多少不限，可不选
           </div>
-        </div>
-
-        {/* Center Pot Container */}
-        <div style={{ height: 240, position: "relative", width: "100%" }}>
-          <CenterPot size={220} baseImage={baseImage} baseColor={baseColor} bits={ings} yOffset={potY} />
-        </div>
-
-        {/* Ingredients Grid */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: "14px 10px",
-            width: "100%",
-            maxWidth: 420,
-            marginTop: 20,
-          }}
-        >
-          {INGREDIENTS.map((it) => {
-            const sel = ings.includes(it.id);
-            return (
-              <div
-                key={it.id}
-                className="lh-clickable animate-lhFade"
-                onClick={(e) => {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  const stageEl = document.querySelector(".stage-board");
-                  let clickX = rect.left + rect.width / 2;
-                  let clickY = rect.top + rect.height / 2;
-                  if (stageEl) {
-                    const sRect = stageEl.getBoundingClientRect();
-                    clickX = clickX - sRect.left;
-                    clickY = clickY - sRect.top;
-                  }
-                  handlePick(it, clickX, clickY);
-                }}
+          {onToggleGesture && (
+            <div style={{ marginTop: 8, display: "flex", justifyContent: "center" }}>
+              <button
+                onClick={onToggleGesture}
                 style={{
+                  background: gestureEnabled ? "#b4382b" : "rgba(247,240,223,.7)",
+                  border: "1.5px solid",
+                  borderColor: gestureEnabled ? "#b4382b" : "rgba(154,123,74,.4)",
+                  borderRadius: 8,
+                  padding: "6px 14px",
+                  color: gestureEnabled ? "#f4eddd" : "#5a4630",
+                  fontSize: 12,
                   cursor: "pointer",
-                  textAlign: "center",
                   display: "flex",
-                  flexDirection: "column",
                   alignItems: "center",
+                  gap: 6,
+                  transition: "all .2s ease",
                 }}
               >
-                <div
+                <span
                   style={{
-                    position: "relative",
-                    width: 76,
-                    height: 56,
+                    width: 7,
+                    height: 7,
                     borderRadius: "50%",
-                    background: "radial-gradient(circle at 50% 34%,#f6efe0,#d6c6a0 78%)",
-                    border: "1.5px solid rgba(90,68,42,.4)",
-                    boxShadow: "0 8px 16px rgba(90,70,40,.12)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
+                    background: gestureEnabled ? "#ffd46a" : "#a98f63",
                   }}
-                >
-                  <RealFoodVisual food={it.food} size={44} />
-                  {sel && <SelectBadge label="✓" />}
-                </div>
-                <div style={{
-                  marginTop: 4,
-                  fontFamily: serif,
-                  fontWeight: 700,
-                  fontSize: 13,
-                  color: "#2c2418",
-                }}>
-                  {it.name}
-                </div>
-                <div style={{
-                  fontSize: 9,
-                  fontWeight: 600,
-                  color: it.kind === "meat" ? "#9a3a2c" : "#4f6a2e",
-                }}>
-                  −{it.cost}金
-                </div>
-              </div>
-            );
-          })}
+                />
+                手势模式 {gestureEnabled ? "ON" : "OFF"}
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* Particles flying inside this viewport container */}
-        {flyers.map((p) => {
-          const targetX = typeof window !== "undefined" ? window.innerWidth / 2 : 180;
-          return (
+        {gestureEnabled ? (
+          <>
+            <CenterPot size={220} baseImage={baseImage} baseColor={baseColor} bits={ings} yOffset={260} />
+            {portraitRing.map(({ it, x, y }) => {
+              const sel = ings.includes(it.id);
+              return (
+                <div
+                  key={it.id}
+                  style={{
+                    position: "absolute",
+                    left: x,
+                    top: y,
+                    transform: "translate(-50%,-50%)",
+                    width: 76,
+                    textAlign: "center",
+                    pointerEvents: "none",
+                  }}
+                >
+                  <div
+                    style={{
+                      position: "relative",
+                      width: 68,
+                      height: 50,
+                      margin: "0 auto",
+                      borderRadius: "50%",
+                      background: "radial-gradient(circle at 50% 34%,#f6efe0,#d6c6a0 78%)",
+                      border: "1.5px solid rgba(90,68,42,.4)",
+                      boxShadow: "0 6px 12px rgba(90,70,40,.15), inset 0 1px 3px rgba(255,255,255,.5)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 40,
+                        height: 32,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        opacity: 0.15,
+                      }}
+                    >
+                      <RealFoodVisual food={it.food} size={36} />
+                    </div>
+                    {sel && <SelectBadge label="✓" />}
+                  </div>
+                  <div
+                    style={{
+                      marginTop: 2,
+                      fontFamily: serif,
+                      fontWeight: 700,
+                      fontSize: 10,
+                      color: "#2c2418",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {it.name}
+                  </div>
+                </div>
+              );
+            })}
+          </>
+        ) : (
+          <>
+            {/* Center Pot Container */}
+            <div style={{ height: 240, position: "relative", width: "100%" }}>
+              <CenterPot size={220} baseImage={baseImage} baseColor={baseColor} bits={ings} yOffset={potY} />
+            </div>
+
+            {/* Ingredients Grid */}
             <div
-              key={p.key}
               style={{
-                position: "absolute",
-                left: p.x,
-                top: p.y,
-                width: 48,
-                height: 48,
-                pointerEvents: "none",
-                zIndex: 25,
-                filter: "drop-shadow(0 4px 6px rgba(80,50,25,.3))",
-                animation: "lhFly .7s cubic-bezier(.5,0,.7,1) forwards",
-                ["--dx" as string]: `${targetX - p.x}px`,
-                ["--dy" as string]: `${180 + potY - p.y}px`, // 180 is title offset
+                display: "grid",
+                gridTemplateColumns: "repeat(3, 1fr)",
+                gap: "14px 10px",
+                width: "100%",
+                maxWidth: 420,
+                marginTop: 20,
               }}
             >
-              <RealFoodVisual food={p.food} size={48} />
+              {INGREDIENTS.map((it) => {
+                const sel = ings.includes(it.id);
+                return (
+                  <div
+                    key={it.id}
+                    className="lh-clickable animate-lhFade"
+                    onClick={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const stageEl = document.querySelector(".stage-board");
+                      let clickX = rect.left + rect.width / 2;
+                      let clickY = rect.top + rect.height / 2;
+                      if (stageEl) {
+                        const sRect = stageEl.getBoundingClientRect();
+                        clickX = clickX - sRect.left;
+                        clickY = clickY - sRect.top;
+                      }
+                      handlePick(it, clickX, clickY);
+                    }}
+                    style={{
+                      cursor: "pointer",
+                      textAlign: "center",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                    }}
+                  >
+                    <div
+                      style={{
+                        position: "relative",
+                        width: 76,
+                        height: 56,
+                        borderRadius: "50%",
+                        background: "radial-gradient(circle at 50% 34%,#f6efe0,#d6c6a0 78%)",
+                        border: "1.5px solid rgba(90,68,42,.4)",
+                        boxShadow: "0 8px 16px rgba(90,70,40,.12)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <RealFoodVisual food={it.food} size={44} />
+                      {sel && <SelectBadge label="✓" />}
+                    </div>
+                    <div style={{
+                      marginTop: 4,
+                      fontFamily: serif,
+                      fontWeight: 700,
+                      fontSize: 13,
+                      color: "#2c2418",
+                    }}>
+                      {it.name}
+                    </div>
+                    <div style={{
+                      fontSize: 9,
+                      fontWeight: 600,
+                      color: it.kind === "meat" ? "#9a3a2c" : "#4f6a2e",
+                    }}>
+                      −{it.cost}金
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
+
+            {/* Particles flying inside this viewport container */}
+            {flyers.map((p) => {
+              const targetX = typeof window !== "undefined" ? window.innerWidth / 2 : 180;
+              return (
+                <div
+                  key={p.key}
+                  style={{
+                    position: "absolute",
+                    left: p.x,
+                    top: p.y,
+                    width: 48,
+                    height: 48,
+                    pointerEvents: "none",
+                    zIndex: 25,
+                    filter: "drop-shadow(0 4px 6px rgba(80,50,25,.3))",
+                    animation: "lhFly .7s cubic-bezier(.5,0,.7,1) forwards",
+                    ["--dx" as string]: `${targetX - p.x}px`,
+                    ["--dy" as string]: `${180 + potY - p.y}px`, // 180 is title offset
+                  }}
+                >
+                  <RealFoodVisual food={p.food} size={48} />
+                </div>
+              );
+            })}
+          </>
+        )}
 
         {/* Gold stats & actions */}
         <div style={{
-          position: "fixed",
+          position: gestureEnabled ? "absolute" : "fixed",
           bottom: 0,
           left: 0,
           right: 0,

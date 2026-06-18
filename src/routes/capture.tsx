@@ -81,6 +81,9 @@ function Bracket({ pos, isPortrait }: { pos: "tl" | "tr" | "bl" | "br"; isPortra
 
 function Capture() {
   const videoRef = useRef<HTMLVideoElement>(null);
+  // 标记本组件是否已卸载(导航离开等):卸载后不再 setState,避免 React 警告。
+  // 注意:识别结果仍会写回 session(见 snap 的 .then),不丢失拍照成果。
+  const abortedRef = useRef(false);
   const navigate = useNavigate();
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [photo, setPhoto] = useState<string | null>(null);
@@ -116,6 +119,10 @@ function Capture() {
 
   useEffect(() => () => stream?.getTracks().forEach((t) => t.stop()), [stream]);
 
+  useEffect(() => () => {
+    abortedRef.current = true;
+  }, []);
+
   const snap = () => {
     const v = videoRef.current;
     if (!v) return;
@@ -134,17 +141,20 @@ function Capture() {
     // 用 minimax-m3 流式识别人物特征,边出边填 4 个标签;无 key/失败回落默认
     setReading(true);
     recognizePhoto(dataUrl, (full) => {
+      if (abortedRef.current) return;
       const p = parsePhotoFeatures(full);
       setFeatures(FEATURES.map((f) => ({ k: f.k, v: p[f.k] || "" })));
     })
       .then((finalText) => {
         const p = parsePhotoFeatures(finalText);
         const feats = FEATURES.map((f) => ({ k: f.k, v: p[f.k] || f.v }));
-        setFeatures(feats);
+        if (!abortedRef.current) setFeatures(feats);
         const txt = feats.map((f) => `${f.k}:${f.v}`).join(" ");
         saveSession({ ...loadSession(), photoFeatures: txt || undefined });
       })
-      .finally(() => setReading(false));
+      .finally(() => {
+        if (!abortedRef.current) setReading(false);
+      });
   };
 
   const next = () => {

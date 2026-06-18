@@ -40,6 +40,7 @@ export default defineConfig(({ command, mode }) => {
         "react/jsx-runtime",
         "react/jsx-dev-runtime",
       ],
+      exclude: ["@mediapipe/tasks-vision"],
       ignoreOutdatedRequests: true,
     },
     server: { host: "::", port: 8080 },

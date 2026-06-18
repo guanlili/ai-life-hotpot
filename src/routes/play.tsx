@@ -133,6 +133,7 @@ function Play() {
   const [secs, setSecs] = useState(TIMER_SECONDS);
   const [boilStep, setBoilStep] = useState(0);
   const [story, setStory] = useState("");
+  const [storyLoading, setStoryLoading] = useState(false);
   const [pickToast, setPickToast] = useState("张开手悬停，握拳抓取，放进锅里松开。");
   const picksRef = useRef<Pick[]>([]);
   const stepStartRef = useRef(Date.now());
@@ -175,9 +176,14 @@ function Play() {
       picks: picksRef.current,
     };
     let active = true;
-    generateStory(summary, sess.photoFeatures).then((s) => {
-      if (active && s) setStory(s);
-    });
+    setStoryLoading(true);
+    generateStory(summary, sess.photoFeatures)
+      .then((s) => {
+        if (active && s) setStory(s);
+      })
+      .finally(() => {
+        if (active) setStoryLoading(false);
+      });
     return () => {
       active = false;
     };
@@ -280,6 +286,7 @@ function Play() {
         <BoilStep
           boilStep={boilStep}
           boilReady={boilReady}
+          storyLoading={storyLoading}
           leftColor={leftColor}
           rightColor={rightColor}
           onReport={goReport}
@@ -1246,12 +1253,14 @@ function SauceStep({
 function BoilStep({
   boilStep,
   boilReady,
+  storyLoading,
   leftColor,
   rightColor,
   onReport,
 }: {
   boilStep: number;
   boilReady: boolean;
+  storyLoading: boolean;
   leftColor?: string;
   rightColor?: string;
   onReport: () => void;
@@ -1423,6 +1432,30 @@ function BoilStep({
               }}
             />
             开火沸腾中 · AI 正在整合你的选择…
+          </div>
+        ) : storyLoading ? (
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 12,
+              color: "#caa05a",
+              fontSize: 14,
+              letterSpacing: ".2em",
+            }}
+          >
+            <span
+              style={{
+                width: 18,
+                height: 18,
+                border: "2px solid rgba(202,160,90,.3)",
+                borderTopColor: "#caa05a",
+                borderRadius: "50%",
+                animation: "lhSpin .8s linear infinite",
+                display: "inline-block",
+              }}
+            />
+            AI 正在为你写人生故事…
           </div>
         ) : (
           <button

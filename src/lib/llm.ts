@@ -57,6 +57,64 @@ async function chat(
 }
 
 /**
+ * 流式调用(SSE)。每收到一段 delta 就回调 onDelta(当前累计全文),用于"边思考边显示"。
+ * 不支持流式 / 出错时自动回落到非流式 chat()。
+ */
+async function chatStream(
+  messages: Message[],
+  model: string,
+  onDelta: (full: string) => void,
+  opts: { temperature?: number; maxTokens?: number; timeoutMs?: number } = {},
+): Promise<string> {
+  const key = getLLMKey();
+  if (!key) return "";
+  const { temperature = 0.8, maxTokens = 500, timeoutMs = 45000 } = opts;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  let full = "";
+  try {
+    const res = await fetch(`${BASE}/chat/completions`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ model, messages, temperature, max_tokens: maxTokens, stream: true }),
+      signal: ctrl.signal,
+    });
+    if (!res.ok || !res.body) return chat(messages, model, opts); // 回落非流式
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+      for (const raw of lines) {
+        const line = raw.trim();
+        if (!line.startsWith("data:")) continue;
+        const payload = line.slice(5).trim();
+        if (!payload || payload === "[DONE]") continue;
+        try {
+          const json = JSON.parse(payload);
+          const delta = json?.choices?.[0]?.delta?.content;
+          if (typeof delta === "string" && delta) {
+            full += delta;
+            onDelta(full);
+          }
+        } catch {
+          /* 忽略解析失败的块 */
+        }
+      }
+    }
+    return full.trim() || chat(messages, model, opts);
+  } catch {
+    return full || chat(messages, model, opts);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
  * 生成人生故事(deepseek-v4-pro)。基于选择摘要 + 可选的人物特征。
  * 成功返回故事正文,失败/无 key 返回 ""(调用方回落模板)。
  */
@@ -93,24 +151,39 @@ ${pickOrder ? `\n选择的先后:${pickOrder}` : ""}
 }
 
 /**
- * 识别人物特征(minimax-m3 视觉)。photoDataUrl 形如 data:image/jpeg;base64,...。
- * 返回一句概括;失败/无 key 返回 ""。
+ * 识别人物特征(minimax-m3 视觉),流式输出。photoDataUrl 形如 data:image/jpeg;base64,...。
+ * 每收到一段内容就回调 onDelta(当前累计全文),用于"边识别边填标签"。
+ * 返回最终全文(四行结构化);失败/无 key 返回 ""。
  */
-export async function recognizePhoto(photoDataUrl: string): Promise<string> {
-  return chat(
+export async function recognizePhoto(
+  photoDataUrl: string,
+  onDelta?: (full: string) => void,
+): Promise<string> {
+  const prompt =
+    "仔细观察这张照片里人物的可见、非敏感印象。严格只输出四行,每行格式为'标签：内容',标签依次为:整体气质、服饰风格、主色印象、现场状态;每项内容不超过10个字。不要推断身份、年龄、性别、职业、财富等,不要输出任何额外说明或前后缀。";
+  return chatStream(
     [
       {
         role: "user",
         content: [
-          {
-            type: "text",
-            text: "仅依据这张照片可见的非敏感印象,用一句话(30字以内)概括这个人的整体气质、服饰风格、色彩印象和现场状态。不要推断身份、年龄、性别、职业、财富等。直接给出概括。",
-          },
+          { type: "text", text: prompt },
           { type: "image_url", image_url: { url: photoDataUrl } },
         ],
       },
     ],
     LLM_MODEL_VISION,
-    { temperature: 0.4, maxTokens: 160, timeoutMs: 30000 },
+    onDelta ?? (() => {}),
+    { temperature: 0.4, maxTokens: 220, timeoutMs: 45000 },
   );
+}
+
+/** 把识别全文解析成 {整体气质, 服饰风格, 主色印象, 现场状态}。 */
+export function parsePhotoFeatures(text: string): Record<string, string> {
+  const labels = ["整体气质", "服饰风格", "主色印象", "现场状态"];
+  const map: Record<string, string> = {};
+  for (const label of labels) {
+    const m = text.match(new RegExp(label + "[：:]\\s*([^\\n\\r]+)"));
+    if (m) map[label] = m[1].trim();
+  }
+  return map;
 }

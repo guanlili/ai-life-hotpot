@@ -197,7 +197,7 @@ export async function generateStory(summary: SelectionSummary, photoFeatures?: s
       { role: "user", content: user },
     ],
     LLM_MODEL_STORY,
-    { temperature: 0.95, maxTokens: 1200, timeoutMs: 45000 },
+    { temperature: 0.95, maxTokens: 2500, timeoutMs: 60000 },
   );
 }
 

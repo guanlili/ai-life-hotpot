@@ -233,6 +233,10 @@ function Play() {
       setBases(bases.filter((x) => x !== id));
       return;
     }
+    if (bases.length >= 2) {
+      setPickToast("锅底最多选择两个哦");
+      return;
+    }
     recordPick(id);
     setBases([...bases, id]);
   };
@@ -366,7 +370,7 @@ function BaseStep({
       <ScreenHead
         step="第一步"
         title="择 锅 底 · 阴 阳 成 锅"
-        sub={`已选 ${bases.length} 个 · 多少不限，可不选`}
+        sub={`已选 ${bases.length} / 2 个 · 最多选两个，可不选`}
       />
       <CenterPot size={340} left={leftColor} right={rightColor} />
       {BASES.map((b, i) => {
@@ -876,7 +880,7 @@ function IngStep({
                 letterSpacing: ".04em",
               }}
             >
-              {it.kind === "meat" ? "荤" : "素"} · −{it.cost}人生值
+              {it.kind === "meat" ? "荤" : "素"} · −{it.cost}金币
             </div>
           </div>
         );
@@ -904,9 +908,46 @@ function IngStep({
         </div>
       ))}
 
-      {/* 人生值 */}
+      {/* 隔空手势开关 */}
+      {onToggleGesture && (
+        <button
+          onClick={onToggleGesture}
+          aria-pressed={gestureEnabled}
+          style={{
+            position: "absolute",
+            left: 34,
+            top: 122,
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "8px 14px",
+            borderRadius: 8,
+            cursor: "pointer",
+            fontFamily: serif,
+            fontSize: 13,
+            letterSpacing: ".06em",
+            color: gestureEnabled ? "#f4eddd" : "#5a4630",
+            background: gestureEnabled ? "#b4382b" : "rgba(247,240,223,.7)",
+            border: gestureEnabled ? "1.5px solid #b4382b" : "1.5px solid rgba(154,123,74,.4)",
+            boxShadow: gestureEnabled ? "0 6px 16px rgba(150,40,30,.28)" : "none",
+            transition: "all .2s ease",
+          }}
+        >
+          <span
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: "50%",
+              background: gestureEnabled ? "#ffd46a" : "#a98f63",
+            }}
+          />
+          隔空手势 {gestureEnabled ? "ON" : "OFF"}
+        </button>
+      )}
+
+      {/* 金币 */}
       <div style={{ position: "absolute", left: 34, bottom: 30 }}>
-        <div style={{ fontSize: 11, letterSpacing: ".3em", color: "#9a6b3a" }}>人生值</div>
+        <div style={{ fontSize: 11, letterSpacing: ".3em", color: "#9a6b3a" }}>金币</div>
         <div
           style={{
             fontFamily: serif,
@@ -1657,9 +1698,9 @@ function ObserverPanel({
     step === "base"
       ? "先选一口顺眼的锅。"
       : step === "ingredients"
-        ? `人生值剩余 ${lifeLeft}，越早下锅的选择权重越高。`
+        ? `金币剩余 ${lifeLeft}，越早下锅的选择权重越高。`
         : step === "sauce"
-          ? "蘸料会改变处理事情的方式，想加几味加几味。"
+          ? "蘸料是人生的点缀，想配几味配几味。"
           : "火锅正在沸腾，AI 正把选择顺序与犹豫时间合成报告。";
   return (
     <div

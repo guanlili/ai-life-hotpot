@@ -77,7 +77,6 @@ export function buildReport(summary: SelectionSummary): LifeReport {
 
   const toneText = noBase ? "本味" : b1 ? `${b0.tone} · ${b1.tone}` : b0.tone;
   const flavor = `${toneText}底色之下 · ${ADJ[t1]}又${ADJ[t2]}的人`;
-  const styleWord = conds[0] ? conds[0].style : "随性";
   const baseText = noBase
     ? `你没有刻意挑锅底——端上来什么锅都接得住,清水白锅也能涮出人生。`
     : b1
@@ -88,7 +87,7 @@ export function buildReport(summary: SelectionSummary): LifeReport {
     baseText +
     `荤里你挑了${meats.map((m) => m.name).join("、") || "几样顺手的"},` +
     `素里配上${vegs.map((v) => v.name).join("、") || "一点清淡"},` +
-    `蘸料偏${conds.map((s) => s.style).join("、") || "清淡"},做事带着${styleWord}的手感。` +
+    `蘸料选了${conds.map((s) => s.name).join("、") || "原味"}来调味，为生活细节增添了独特的层次。` +
     `若把人生折成一百枚金币,你会把最多的押在「${DIM_LABEL[t1]}」上,` +
     `其次留给「${DIM_LABEL[t2]}」。${DIMLINE[t1]}` +
     `这一锅火候正好,像一份被你亲手熬出来的人生味道。`;

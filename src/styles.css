@@ -400,3 +400,19 @@
     opacity: 0.15;
   }
 }
+
+/* 自定义精致滚动条 */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(154,123,74,0.05);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(154,123,74,0.25);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(180,56,43,0.5);
+}

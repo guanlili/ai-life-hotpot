@@ -42,7 +42,7 @@ export interface Ingredient {
   name: string;
   food: string; // FoodGlyph 的 key
   kind: "meat" | "veg";
-  cost: number; // 人生值消耗
+  cost: number; // 金币消耗
   tint: string; // 落锅小圆点颜色
   weights: Weights;
 }
@@ -50,7 +50,7 @@ export interface Ingredient {
 export interface Condiment {
   id: string;
   name: string;
-  style: string; // 行为风格
+  style: string; // 风味特征
   color: string; // 酱心颜色
   weights: Weights;
 }
@@ -220,16 +220,16 @@ export const INGREDIENTS: Ingredient[] = [
 ];
 
 export const CONDIMENTS: Condiment[] = [
-  { id: "garlic", name: "蒜蓉", style: "直接", color: "#ece3c8", weights: W([1, 0, 0, 1, 0]) },
-  { id: "cilantro", name: "香菜", style: "敏锐", color: "#4f8a3a", weights: W([0, 1, 1, 0, 1]) },
-  { id: "chili", name: "小米辣", style: "强势", color: "#c23a1c", weights: W([1, 0, 1, 0, 1]) },
-  { id: "scallion", name: "葱花", style: "随性", color: "#6fae3a", weights: W([0, 1, 1, 0, 0]) },
-  { id: "sesame", name: "芝麻", style: "慢热", color: "#d8c89a", weights: W([0, 1, 0, 1, 0]) },
-  { id: "peanut", name: "花生碎", style: "务实", color: "#cda06a", weights: W([1, 0, 0, 1, 0]) },
-  { id: "oyster", name: "蚝油", style: "理性", color: "#6a4a2a", weights: W([1, 0, 0, 1, 1]) },
-  { id: "vinegar", name: "醋", style: "清醒", color: "#5a3018", weights: W([0, 0, 1, 1, 1]) },
-  { id: "sesameoil", name: "香油", style: "浪漫", color: "#d9a73a", weights: W([0, 2, 0, 1, 0]) },
-  { id: "chilioil", name: "辣椒油", style: "热烈", color: "#b4321c", weights: W([1, 1, 0, 0, 1]) },
+  { id: "garlic", name: "蒜蓉", style: "辛香", color: "#ece3c8", weights: W([1, 0, 0, 1, 0]) },
+  { id: "cilantro", name: "香菜", style: "清香", color: "#4f8a3a", weights: W([0, 1, 1, 0, 1]) },
+  { id: "chili", name: "小米辣", style: "辛辣", color: "#c23a1c", weights: W([1, 0, 1, 0, 1]) },
+  { id: "scallion", name: "葱花", style: "清爽", color: "#6fae3a", weights: W([0, 1, 1, 0, 0]) },
+  { id: "sesame", name: "芝麻", style: "醇香", color: "#d8c89a", weights: W([0, 1, 0, 1, 0]) },
+  { id: "peanut", name: "花生碎", style: "浓郁", color: "#cda06a", weights: W([1, 0, 0, 1, 0]) },
+  { id: "oyster", name: "蚝油", style: "鲜美", color: "#6a4a2a", weights: W([1, 0, 0, 1, 1]) },
+  { id: "vinegar", name: "醋", style: "酸爽", color: "#5a3018", weights: W([0, 0, 1, 1, 1]) },
+  { id: "sesameoil", name: "香油", style: "香浓", color: "#d9a73a", weights: W([0, 2, 0, 1, 0]) },
+  { id: "chilioil", name: "辣椒油", style: "油辣", color: "#b4321c", weights: W([1, 1, 0, 0, 1]) },
 ];
 
 export const ALL_ITEMS = [...BASES, ...INGREDIENTS, ...CONDIMENTS];

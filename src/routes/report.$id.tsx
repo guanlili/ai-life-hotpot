@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import QRCode from "qrcode";
 import { Stage } from "@/components/Stage";
 import { DIM_LABEL, itemById } from "@/data/hotpot";
 import { decodeSummary, encodeSummary } from "@/lib/scoring";
 import { buildReport } from "@/lib/mockReport";
 import { generateStory } from "@/lib/llm";
+import { useIsPortrait } from "@/hooks/use-mobile";
 
 export const Route = createFileRoute("/report/$id")({
   head: ({ params }) => ({
@@ -102,8 +103,152 @@ function parseStory(raw: string): {
   return { title, slogan, observer, narrative: narrative || body };
 }
 
+function parseItalic(content: string): ReactNode[] {
+  const italicRegex = /(\*.*?\*|_.*?_)/g;
+  const parts = content.split(italicRegex);
+  return parts.map((part, i) => {
+    if ((part.startsWith("*") && part.endsWith("*")) || (part.startsWith("_") && part.endsWith("_"))) {
+      return <em key={i} style={{ fontStyle: "italic" }}>{part.slice(1, -1)}</em>;
+    }
+    return part;
+  });
+}
+
+function parseInlineElements(content: string): ReactNode[] {
+  const boldRegex = /(\*\*.*?\*\*|__.*?__)/g;
+  const parts = content.split(boldRegex);
+  return parts.flatMap((part, i) => {
+    if ((part.startsWith("**") && part.endsWith("**")) || (part.startsWith("__") && part.endsWith("__"))) {
+      return <strong key={i} style={{ fontWeight: 700, color: "#1c140c" }}>{parseItalic(part.slice(2, -2))}</strong>;
+    }
+    return parseItalic(part);
+  });
+}
+
+function RichText({ text, style }: { text: string; style?: CSSProperties }) {
+  if (!text) return null;
+
+  const lines = text.split("\n");
+  const blocks: ReactNode[] = [];
+  let listItems: ReactNode[] = [];
+
+  const flushList = (key: string | number) => {
+    if (listItems.length > 0) {
+      blocks.push(
+        <ul
+          key={`list-${key}`}
+          style={{
+            margin: "6px 0",
+            paddingLeft: "16px",
+            listStyleType: "disc",
+          }}
+        >
+          {listItems}
+        </ul>
+      );
+      listItems = [];
+    }
+  };
+
+  lines.forEach((line, index) => {
+    const trimmed = line.trim();
+
+    if (!trimmed) {
+      flushList(index);
+      blocks.push(<div key={`br-${index}`} style={{ height: "8px" }} />);
+      return;
+    }
+
+    // Headers
+    const headerMatch = trimmed.match(/^(#{1,6})\s+(.*)$/);
+    if (headerMatch) {
+      flushList(index);
+      const level = headerMatch[1].length;
+      const content = headerMatch[2];
+      const displayContent = content.replace(/^【\s*/, "").replace(/\s*】$/, "");
+      const fontSize = level === 1 ? 17 : level === 2 ? 15 : level === 3 ? 13.5 : 12.5;
+      blocks.push(
+        <div
+          key={`h-${index}`}
+          style={{
+            fontFamily: serif,
+            fontWeight: 800,
+            fontSize,
+            color: "#7a2418",
+            marginTop: "16px",
+            marginBottom: "8px",
+            letterSpacing: "0.02em",
+          }}
+        >
+          {parseInlineElements(displayContent)}
+        </div>
+      );
+      return;
+    }
+
+    // Lists
+    const listMatch = trimmed.match(/^([*\-•])\s+(.*)$/);
+    if (listMatch) {
+      const content = listMatch[2];
+      listItems.push(
+        <li
+          key={`li-${index}`}
+          style={{
+            marginBottom: "4px",
+            lineHeight: 1.6,
+          }}
+        >
+          {parseInlineElements(content)}
+        </li>
+      );
+      return;
+    }
+
+    flushList(index);
+
+    const isNodeHeader = trimmed.startsWith("【命运节点") || trimmed.startsWith("【AI观察员评价】") || (trimmed.startsWith("【") && trimmed.endsWith("】")) || (trimmed.includes("岁") && (trimmed.includes("·") || trimmed.includes("：") || trimmed.includes(":")));
+
+    if (isNodeHeader) {
+      blocks.push(
+        <div
+          key={`node-${index}`}
+          style={{
+            fontFamily: serif,
+            fontWeight: 700,
+            fontSize: 13,
+            color: "#7a2418",
+            marginTop: "14px",
+            marginBottom: "6px",
+            letterSpacing: "0.02em",
+          }}
+        >
+          {parseInlineElements(trimmed.replace(/^【\s*/, "").replace(/\s*】$/, ""))}
+        </div>
+      );
+    } else {
+      blocks.push(
+        <p
+          key={`p-${index}`}
+          style={{
+            margin: "0 0 8px 0",
+            lineHeight: 1.65,
+          }}
+        >
+          {parseInlineElements(trimmed)}
+        </p>
+      );
+    }
+  });
+
+  flushList("end");
+
+  return <div style={{ fontSize: "inherit", color: "inherit", ...style }}>{blocks}</div>;
+}
+
 function Report() {
   const { id } = Route.useParams();
+  const isPortrait = useIsPortrait();
+
   const summary = useMemo(() => decodeSummary(id), [id]);
   const report = useMemo(() => (summary ? buildReport(summary) : null), [summary]);
 
@@ -181,7 +326,17 @@ function Report() {
   return (
     <Stage>
       <div
-        style={{
+        style={isPortrait ? {
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          width: "100%",
+          height: "100%",
+          padding: "16px 10px",
+          boxSizing: "border-box",
+          animation: "lhFade .5s ease both",
+        } : {
           position: "absolute",
           inset: 0,
           display: "flex",
@@ -192,7 +347,14 @@ function Report() {
         }}
       >
         {/* 3D 翻面人生火锅报告卡 */}
-        <div style={{ perspective: 1000, width: 460, height: 668, position: "relative" }}>
+        <div style={{
+          perspective: 1000,
+          width: isPortrait ? "calc(100vw - 32px)" : 460,
+          maxWidth: 460,
+          height: isPortrait ? "calc(100vh - 48px)" : 668,
+          maxHeight: 668,
+          position: "relative",
+        }}>
           <div
             style={{
               width: "100%",
@@ -214,8 +376,9 @@ function Report() {
                 borderRadius: 8,
                 boxShadow: "0 30px 70px rgba(60,40,20,.4)",
                 border: "1px solid rgba(154,123,74,.4)",
-                overflow: "hidden",
-                padding: "30px 34px 56px 34px",
+                overflowY: "auto",
+                WebkitOverflowScrolling: "touch",
+                padding: isPortrait ? "20px 20px 48px 20px" : "30px 34px 56px 34px",
                 color: "#2c2418",
                 display: "flex",
                 flexDirection: "column",
@@ -248,7 +411,7 @@ function Report() {
                     </div>
                   )}
                   <div
-                    style={{ fontFamily: serif, fontWeight: 900, fontSize: 23, letterSpacing: ".12em" }}
+                    style={{ fontFamily: serif, fontWeight: 900, fontSize: isPortrait ? 20 : 23, letterSpacing: ".12em" }}
                   >
                     人生火锅报告
                   </div>
@@ -297,7 +460,7 @@ function Report() {
                 style={{
                   fontFamily: serif,
                   fontWeight: 900,
-                  fontSize: 25,
+                  fontSize: isPortrait ? 21 : 25,
                   lineHeight: 1.35,
                   marginTop: 6,
                   color: "#7a2418",
@@ -311,19 +474,19 @@ function Report() {
               <div style={{ display: "flex", gap: 8, marginTop: 18, position: "relative" }}>
                 <div style={chipStyle}>
                   <div style={{ fontSize: 9, color: "#9a6b3a", letterSpacing: ".2em" }}>人生锅底</div>
-                  <div style={{ fontFamily: serif, fontWeight: 700, fontSize: 14, marginTop: 3 }}>
+                  <div style={{ fontFamily: serif, fontWeight: 700, fontSize: 13, marginTop: 3 }}>
                     {report.baseName}
                   </div>
                 </div>
                 <div style={chipStyle}>
                   <div style={{ fontSize: 9, color: "#9a6b3a", letterSpacing: ".2em" }}>核心食材</div>
-                  <div style={{ fontFamily: serif, fontWeight: 700, fontSize: 14, marginTop: 3 }}>
+                  <div style={{ fontFamily: serif, fontWeight: 700, fontSize: 13, marginTop: 3 }}>
                     {report.coreIng}
                   </div>
                 </div>
                 <div style={chipStyle}>
                   <div style={{ fontSize: 9, color: "#9a6b3a", letterSpacing: ".2em" }}>灵魂蘸料</div>
-                  <div style={{ fontFamily: serif, fontWeight: 700, fontSize: 14, marginTop: 3 }}>
+                  <div style={{ fontFamily: serif, fontWeight: 700, fontSize: 13, marginTop: 3 }}>
                     {report.soulSauce}
                   </div>
                 </div>
@@ -399,10 +562,11 @@ function Report() {
                   style={{
                     fontFamily: serif,
                     fontWeight: 900,
-                    fontSize: 21,
+                    fontSize: isPortrait ? 18 : 21,
                     lineHeight: 1.3,
                     color: "#7a2418",
                     position: "relative",
+                    marginTop: 10,
                   }}
                 >
                   {parsed.title}
@@ -412,7 +576,7 @@ function Report() {
                 <div
                   style={{
                     fontFamily: serif,
-                    fontSize: 13,
+                    fontSize: isPortrait ? 12 : 13,
                     lineHeight: 1.5,
                     color: "#5a4630",
                     marginTop: 8,
@@ -497,7 +661,7 @@ function Report() {
                       zIndex: 1,
                     }}
                   >
-                    {parsed.observer}
+                    <RichText text={parsed.observer} />
                   </div>
                 </div>
               )}
@@ -533,10 +697,11 @@ function Report() {
               {/* 底部版权 */}
               <div
                 style={{
-                  position: "absolute",
-                  left: 34,
-                  right: 34,
-                  bottom: 18,
+                  position: isPortrait ? "relative" : "absolute",
+                  left: isPortrait ? 0 : 34,
+                  right: isPortrait ? 0 : 34,
+                  bottom: isPortrait ? 0 : 18,
+                  marginTop: isPortrait ? 20 : 0,
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
@@ -563,7 +728,7 @@ function Report() {
                 pointerEvents: isFlipped ? "auto" : "none",
               }}
             >
-              {/* 内部卡片容器：避免在直接应用 rotateY 3D 变换的元素上应用 overflow 与 padding，从而解决 Mac 触摸板/滚轮的滚动判定 bug */}
+              {/* 内部卡片容器 */}
               <div
                 style={{
                   width: "100%",
@@ -573,7 +738,7 @@ function Report() {
                   boxShadow: "0 30px 70px rgba(60,40,20,.4)",
                   border: "1px solid rgba(154,123,74,.4)",
                   overflow: "hidden",
-                  padding: "30px 34px 56px 34px",
+                  padding: isPortrait ? "20px 20px 48px 20px" : "30px 34px 56px 34px",
                   color: "#2c2418",
                   display: "flex",
                   flexDirection: "column",
@@ -605,7 +770,7 @@ function Report() {
                       </div>
                     )}
                     <div
-                      style={{ fontFamily: serif, fontWeight: 900, fontSize: 23, letterSpacing: ".12em" }}
+                      style={{ fontFamily: serif, fontWeight: 900, fontSize: isPortrait ? 20 : 23, letterSpacing: ".12em" }}
                     >
                       命 运 故 事
                     </div>
@@ -674,7 +839,6 @@ function Report() {
                     fontSize: 12.5,
                     lineHeight: 1.65,
                     color: "#3a2c1c",
-                    whiteSpace: "pre-line",
                   }}
                 >
                   {storyLoading && (
@@ -707,7 +871,7 @@ function Report() {
                       <span>大模型正在为您深度推演故事细节，稍后将自动无缝升级...</span>
                     </div>
                   )}
-                  {parsed.narrative || story}
+                  <RichText text={parsed.narrative || story} />
                 </div>
 
                 {/* 底部: 扫码保存 + 按钮 */}
@@ -730,6 +894,7 @@ function Report() {
                       padding: 5,
                       boxShadow: "inset 0 0 0 1px rgba(0,0,0,.06)",
                       flexShrink: 0,
+                      display: isPortrait ? "none" : "block",
                     }}
                   >
                     {qr ? (
@@ -740,10 +905,10 @@ function Report() {
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontFamily: serif, fontWeight: 700, fontSize: 13, color: "#2c2418" }}>
-                      扫码在手机端保存报告
+                      {isPortrait ? "您可以复制链接分享此报告" : "扫码在手机端保存报告"}
                     </div>
                     <div style={{ fontSize: 11, color: "#8a6a44", marginTop: 2, lineHeight: 1.4 }}>
-                      公网链接 · 手机可看
+                      {isPortrait ? "永久链接 · 多端可看" : "公网链接 · 手机可看"}
                     </div>
                     <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
                       <div
@@ -787,10 +952,11 @@ function Report() {
                 {/* 底部版权 */}
                 <div
                   style={{
-                    position: "absolute",
-                    left: 34,
-                    right: 34,
-                    bottom: 18,
+                    position: isPortrait ? "relative" : "absolute",
+                    left: isPortrait ? 0 : 34,
+                    right: isPortrait ? 0 : 34,
+                    bottom: isPortrait ? 0 : 18,
+                    marginTop: isPortrait ? 20 : 0,
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",

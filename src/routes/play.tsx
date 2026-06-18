@@ -9,6 +9,7 @@ import type { GestureState } from "@/hooks/useHandGesture";
 import { encodeSummary, type Pick, type SelectionSummary } from "@/lib/scoring";
 import { loadSession, saveSession } from "@/lib/session";
 import { generateStory } from "@/lib/llm";
+import { useIsPortrait } from "@/hooks/use-mobile";
 
 type Step = "base" | "ingredients" | "sauce" | "boiling";
 
@@ -391,6 +392,105 @@ function BaseStep({
   onPick: (id: string) => void;
   onNext: () => void;
 }) {
+  const isPortrait = useIsPortrait();
+
+  if (isPortrait) {
+    return (
+      <div style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        width: "100%",
+        padding: "0 16px 120px",
+        boxSizing: "border-box",
+      }}>
+        <div style={{ textAlign: "center", marginTop: 20, marginBottom: 20 }}>
+          <div style={{ fontSize: 12, letterSpacing: ".3em", color: "#9a6b3a" }}>第一步</div>
+          <div style={{ fontFamily: serif, fontWeight: 700, fontSize: 24, color: "#2c2418", marginTop: 4 }}>
+            择锅底 · 定基调
+          </div>
+          <div style={{ fontSize: 11, color: "#8a6a44", marginTop: 6 }}>
+            已选 {bases.length} / 1 个 · 选一种口味，可不选
+          </div>
+        </div>
+
+        <div style={{ height: 240, position: "relative", width: "100%" }}>
+          <CenterPot size={220} baseImage={baseImage} baseColor={baseColor} yOffset={120} />
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 12,
+            width: "100%",
+            maxWidth: 400,
+            marginTop: 20,
+          }}
+        >
+          {BASES.map((b) => {
+            const sel = bases.includes(b.id);
+            return (
+              <div
+                key={b.id}
+                className="lh-card"
+                onClick={() => onPick(b.id)}
+                style={{
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 14,
+                  padding: "10px 12px",
+                  borderRadius: 8,
+                  background: sel
+                    ? "linear-gradient(180deg,rgba(247,240,223,.92),rgba(236,225,201,.88))"
+                    : "rgba(247,240,223,.56)",
+                  border: sel ? "1.5px solid rgba(180,56,43,.72)" : "1px solid rgba(154,123,74,.28)",
+                  boxShadow: sel
+                    ? "0 10px 22px rgba(120,70,40,.12)"
+                    : "0 6px 14px rgba(90,70,40,.06)",
+                }}
+              >
+                <div style={{
+                  flex: "none",
+                  width: 50,
+                  height: 50,
+                  borderRadius: "50%",
+                  border: sel ? `2px solid ${b.color}` : "1.5px solid rgba(90,68,42,.4)",
+                  overflow: "hidden",
+                  position: "relative",
+                }}>
+                  <img src={b.image} alt={b.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  {sel && <SelectBadge label="✓" />}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontFamily: serif, fontWeight: 800, fontSize: 18, color: "#2c2418" }}>
+                    {b.name}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div style={{
+          position: "fixed",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          padding: "16px 20px 24px",
+          background: "linear-gradient(180deg, transparent, #f4eddd 25%)",
+          textAlign: "center",
+          zIndex: 10,
+        }}>
+          <button onClick={onNext} style={{ ...btnPrimary, width: "100%", maxWidth: 300 }}>
+            下一步 · 配食材
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <ScreenHead
@@ -488,6 +588,7 @@ function BaseStep({
     </>
   );
 }
+
 
 /* ============ 食材 ============ */
 function RealFoodVisual({ food, size = 82 }: { food: string; size?: number }) {
@@ -761,6 +862,7 @@ function IngStep({
   gestureEnabled?: boolean;
   onToggleGesture?: () => void;
 }) {
+  const isPortrait = useIsPortrait();
   const ring = INGREDIENTS.map((it, i) => {
     const a = -Math.PI / 2 + (i + 0.5) * ((2 * Math.PI) / 12);
     return { it, x: C.cx + 440 * Math.cos(a), y: C.cy + 200 * Math.sin(a) };
@@ -769,7 +871,7 @@ function IngStep({
   const ss = String(secs % 60).padStart(2, "0");
   const timesUp = secs <= 0;
 
-  // 下锅飞入:仅"新增"食材时,从食材位置划弧飞向锅心(640,400)。
+  // 下锅飞入:仅"新增"食材时,从食材位置划弧飞向锅心。
   const [flyers, setFlyers] = useState<{ key: number; food: string; x: number; y: number }[]>([]);
   const flyKey = useRef(0);
   const handlePick = (it: (typeof INGREDIENTS)[number], x: number, y: number) => {
@@ -780,6 +882,173 @@ function IngStep({
     }
     onToggle(it.id);
   };
+
+  if (isPortrait) {
+    const potY = 120;
+    return (
+      <div style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        width: "100%",
+        padding: "0 16px 130px",
+        boxSizing: "border-box",
+        position: "relative",
+      }}>
+        <div style={{ textAlign: "center", marginTop: 20, marginBottom: 15 }}>
+          <div style={{ fontSize: 12, letterSpacing: ".3em", color: "#9a6b3a" }}>第二步</div>
+          <div style={{ fontFamily: serif, fontWeight: 700, fontSize: 24, color: "#2c2418", marginTop: 4 }}>
+            配食材 · 涮一锅人生
+          </div>
+          <div style={{
+            fontFamily: serif,
+            fontWeight: 700,
+            fontSize: 18,
+            color: timesUp ? "#b4382b" : "#7a3228",
+            marginTop: 6,
+          }}>
+            {timesUp ? "时间到 · 随时开涮" : `一分 · ${mm}:${ss}`}
+          </div>
+          <div style={{ fontSize: 11, color: "#8a6a44", marginTop: 4 }}>
+            荤 {meatPicked} · 素 {vegPicked} · 多少不限，可不选
+          </div>
+        </div>
+
+        {/* Center Pot Container */}
+        <div style={{ height: 240, position: "relative", width: "100%" }}>
+          <CenterPot size={220} baseImage={baseImage} baseColor={baseColor} bits={ings} yOffset={potY} />
+        </div>
+
+        {/* Ingredients Grid */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: "14px 10px",
+            width: "100%",
+            maxWidth: 420,
+            marginTop: 20,
+          }}
+        >
+          {INGREDIENTS.map((it) => {
+            const sel = ings.includes(it.id);
+            return (
+              <div
+                key={it.id}
+                className="lh-clickable animate-lhFade"
+                onClick={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const stageEl = document.querySelector(".stage-board");
+                  let clickX = rect.left + rect.width / 2;
+                  let clickY = rect.top + rect.height / 2;
+                  if (stageEl) {
+                    const sRect = stageEl.getBoundingClientRect();
+                    clickX = clickX - sRect.left;
+                    clickY = clickY - sRect.top;
+                  }
+                  handlePick(it, clickX, clickY);
+                }}
+                style={{
+                  cursor: "pointer",
+                  textAlign: "center",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                }}
+              >
+                <div
+                  style={{
+                    position: "relative",
+                    width: 76,
+                    height: 56,
+                    borderRadius: "50%",
+                    background: "radial-gradient(circle at 50% 34%,#f6efe0,#d6c6a0 78%)",
+                    border: "1.5px solid rgba(90,68,42,.4)",
+                    boxShadow: "0 8px 16px rgba(90,70,40,.12)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <RealFoodVisual food={it.food} size={44} />
+                  {sel && <SelectBadge label="✓" />}
+                </div>
+                <div style={{
+                  marginTop: 4,
+                  fontFamily: serif,
+                  fontWeight: 700,
+                  fontSize: 13,
+                  color: "#2c2418",
+                }}>
+                  {it.name}
+                </div>
+                <div style={{
+                  fontSize: 9,
+                  fontWeight: 600,
+                  color: it.kind === "meat" ? "#9a3a2c" : "#4f6a2e",
+                }}>
+                  −{it.cost}金
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Particles flying inside this viewport container */}
+        {flyers.map((p) => {
+          const targetX = typeof window !== "undefined" ? window.innerWidth / 2 : 180;
+          return (
+            <div
+              key={p.key}
+              style={{
+                position: "absolute",
+                left: p.x,
+                top: p.y,
+                width: 48,
+                height: 48,
+                pointerEvents: "none",
+                zIndex: 25,
+                filter: "drop-shadow(0 4px 6px rgba(80,50,25,.3))",
+                animation: "lhFly .7s cubic-bezier(.5,0,.7,1) forwards",
+                ["--dx" as string]: `${targetX - p.x}px`,
+                ["--dy" as string]: `${180 + potY - p.y}px`, // 180 is title offset
+              }}
+            >
+              <RealFoodVisual food={p.food} size={48} />
+            </div>
+          );
+        })}
+
+        {/* Gold stats & actions */}
+        <div style={{
+          position: "fixed",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          padding: "12px 20px 24px",
+          background: "linear-gradient(180deg, transparent, #f4eddd 25%)",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 12,
+          zIndex: 10,
+        }}>
+          {/* Life Left Bar */}
+          <div style={{ display: "flex", alignItems: "center", justifySelf: "stretch", width: "100%", maxWidth: 300, gap: 10 }}>
+            <span style={{ fontSize: 12, color: "#9a6b3a", whiteSpace: "nowrap" }}>剩余人生金币</span>
+            <div style={{ flex: 1, height: 6, borderRadius: 3, background: "#cdbf9f", overflow: "hidden" }}>
+              <div style={{ width: `${lifeLeft}%`, height: "100%", background: "#b4382b", transition: "width .3s ease" }} />
+            </div>
+            <span style={{ fontSize: 13, fontFamily: serif, fontWeight: 700, color: "#2c2418" }}>{lifeLeft}/100</span>
+          </div>
+          <button onClick={onNext} style={{ ...btnPrimary, width: "100%", maxWidth: 300 }}>
+            下一步 · 调蘸料
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <div
@@ -1014,12 +1283,12 @@ function IngStep({
         <button
           onClick={() => onToggleGesture?.()}
           style={{
-            background: gestureEnabled ? "#00aa00" : "rgba(0,0,0,0.5)",
+            background: gestureEnabled ? "#b4382b" : "rgba(247,240,223,.7)",
             border: "1.5px solid",
-            borderColor: gestureEnabled ? "#00ff00" : "rgba(154,123,74,.4)",
+            borderColor: gestureEnabled ? "#b4382b" : "rgba(154,123,74,.4)",
             borderRadius: 8,
             padding: "8px 16px",
-            color: "#fff",
+            color: gestureEnabled ? "#f4eddd" : "#5a4630",
             fontSize: 13,
             cursor: "pointer",
             display: "flex",
@@ -1033,7 +1302,7 @@ function IngStep({
               width: 8,
               height: 8,
               borderRadius: "50%",
-              background: gestureEnabled ? "#00ff00" : "#888",
+              background: gestureEnabled ? "#ffd46a" : "#a98f63",
             }}
           />
           手势模式 {gestureEnabled ? "ON" : "OFF"}
@@ -1092,6 +1361,7 @@ function SauceStep({
   onToggle: (id: string) => void;
   onConfirm: () => void;
 }) {
+  const isPortrait = useIsPortrait();
   const oilColors = conds
     .map((id) => CONDIMENTS.find((c) => c.id === id)?.color)
     .filter(Boolean)
@@ -1117,6 +1387,187 @@ function SauceStep({
       };
     });
   });
+
+  if (isPortrait) {
+    return (
+      <div style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        width: "100%",
+        padding: "0 16px 120px",
+        boxSizing: "border-box",
+        position: "relative",
+      }}>
+        <div style={{ textAlign: "center", marginTop: 20, marginBottom: 15 }}>
+          <div style={{ fontSize: 12, letterSpacing: ".3em", color: "#9a6b3a" }}>第三步</div>
+          <div style={{ fontFamily: serif, fontWeight: 700, fontSize: 24, color: "#2c2418", marginTop: 4 }}>
+            调蘸料 · 定行为风格
+          </div>
+          <div style={{ fontSize: 11, color: "#8a6a44", marginTop: 4 }}>
+            挑选你顺手的味道 · 已选 {conds.length} 味
+          </div>
+        </div>
+
+        {/* Sauce Bowl (150px) */}
+        <div style={{ textAlign: "center", margin: "10px auto 20px" }}>
+          <div
+            style={{
+              position: "relative",
+              width: 150,
+              height: 150,
+              borderRadius: "50%",
+              background: "radial-gradient(circle at 50% 36%,#f6efe0,#cdbb92 80%)",
+              boxShadow: "0 10px 24px rgba(90,70,40,.2)",
+              margin: "0 auto",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                position: "absolute",
+                left: "50%",
+                top: "52%",
+                transform: "translate(-50%,-50%)",
+                width: 96,
+                height: 96,
+                borderRadius: "50%",
+                background: oilColors.length
+                  ? `radial-gradient(circle at 40% 34%,rgba(255,255,255,.16),transparent 24%), conic-gradient(from 20deg, ${oilColors.join(", ")}, ${oilColors[0]}), radial-gradient(circle,#7a3a20,#25140c)`
+                  : "rgba(120,95,55,.12)",
+                overflow: "hidden",
+              }}
+            >
+              {oilColors.length > 0 && (
+                <span
+                  style={{
+                    position: "absolute",
+                    left: 20,
+                    top: 15,
+                    width: 36,
+                    height: 12,
+                    borderRadius: "50%",
+                    background: "rgba(255,244,190,.28)",
+                    filter: "blur(3px)",
+                    transform: "rotate(-13deg)",
+                  }}
+                />
+              )}
+            </div>
+            {mixedBits.map((d, i) => {
+              const relativeX = d.x - 115;
+              const relativeY = d.y - 115;
+              const scaledX = 75 + relativeX * (75 / 115);
+              const scaledY = 75 + relativeY * (75 / 115);
+              return (
+                <span
+                  key={i}
+                  style={{
+                    position: "absolute",
+                    left: scaledX,
+                    top: scaledY,
+                    width: d.size * 0.75,
+                    height: d.leaf ? 3 : d.ring ? 5 : d.size * 0.75,
+                    borderRadius: "50%",
+                    background: d.color,
+                    transform: `rotate(${d.rot}deg)`,
+                    animation: "lhDrop .5s ease both",
+                  }}
+                />
+              );
+            })}
+          </div>
+          <div style={{ fontSize: 11, color: "#a98f63", marginTop: 8, minHeight: 16 }}>
+            {conds.length
+              ? CONDIMENTS.filter((c) => conds.includes(c.id))
+                  .map((c) => c.style)
+                  .join(" · ")
+              : "不蘸也是一味"}
+          </div>
+        </div>
+
+        {/* Condiments Grid */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: "14px 8px",
+            width: "100%",
+            maxWidth: 420,
+          }}
+        >
+          {CONDIMENTS.map((s) => {
+            const sel = conds.includes(s.id);
+            return (
+              <div
+                key={s.id}
+                className="lh-card"
+                onClick={() => onToggle(s.id)}
+                style={{ cursor: "pointer", textAlign: "center", outline: "none" }}
+              >
+                <div
+                  style={{
+                    position: "relative",
+                    width: 66,
+                    height: 66,
+                    margin: "0 auto",
+                    borderRadius: "50%",
+                    background: "radial-gradient(circle at 50% 30%,#f4ecd9,#bd9f67 78%)",
+                    boxShadow: "0 6px 12px rgba(90,70,40,.16)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <div
+                    style={{
+                      position: "relative",
+                      width: 46,
+                      height: 46,
+                      borderRadius: "50%",
+                      background: "radial-gradient(circle at 50% 50%,#3a2416,#191009)",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <CondimentVisual id={s.id} />
+                  </div>
+                  {sel && <SelectBadge label="✓" />}
+                </div>
+                <div
+                  style={{
+                    marginTop: 4,
+                    fontFamily: serif,
+                    fontWeight: 700,
+                    fontSize: 13,
+                    color: "#2c2418",
+                  }}
+                >
+                  {s.name}
+                </div>
+                <div style={{ fontSize: 10, color: "#9a3a2c", transform: "scale(0.95)" }}>{s.style}</div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div style={{
+          position: "fixed",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          padding: "16px 20px 24px",
+          background: "linear-gradient(180deg, transparent, #f4eddd 25%)",
+          textAlign: "center",
+          zIndex: 10,
+        }}>
+          <button onClick={onConfirm} style={{ ...btnPrimary, width: "100%", maxWidth: 300 }}>
+            选好了
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <ScreenHead
@@ -1312,6 +1763,7 @@ function BoilStep({
   baseColor?: string;
   onReport: () => void;
 }) {
+  const isPortrait = useIsPortrait();
   const [tipIndex, setTipIndex] = useState(0);
 
   const tips = [
@@ -1329,6 +1781,253 @@ function BoilStep({
     }, 2200);
     return () => clearInterval(timer);
   }, [storyLoading]);
+
+  if (isPortrait) {
+    return (
+      <div style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        width: "100%",
+        height: "100%",
+        padding: "24px 20px 40px",
+        boxSizing: "border-box",
+        position: "relative",
+        justifyContent: "space-between",
+      }}>
+        {/* Heat glow */}
+        <div
+          style={{
+            position: "absolute",
+            left: "50%",
+            top: 200,
+            transform: "translate(-50%,-50%)",
+            width: 280,
+            height: 180,
+            borderRadius: "50%",
+            background:
+              "radial-gradient(ellipse at 50% 62%,rgba(255,115,32,.28),rgba(180,56,43,.1) 44%,transparent 72%)",
+            filter: "blur(12px)",
+            animation: "lhHeatGlow 1.8s ease-in-out infinite",
+            pointerEvents: "none",
+          }}
+        />
+
+        {/* Big Pot (260px size) */}
+        <div
+          style={{
+            position: "relative",
+            width: 260,
+            height: 260,
+            margin: "30px auto",
+          }}
+        >
+          {/* Flames */}
+          <div
+            style={{
+              position: "absolute",
+              left: "50%",
+              bottom: 2,
+              transform: "translateX(-50%)",
+              width: 150,
+              height: 60,
+              pointerEvents: "none",
+              zIndex: 0,
+            }}
+          >
+            {[0, 1, 2, 3, 4].map((i) => (
+              <span
+                key={i}
+                style={{
+                  position: "absolute",
+                  left: `${18 + i * 17}%`,
+                  bottom: 0,
+                  width: 30 - (i % 2) * 5,
+                  height: 48 + (i % 3) * 8,
+                  borderRadius: "46% 46% 52% 52%",
+                  background:
+                    i % 2
+                      ? "radial-gradient(ellipse at 50% 78%,#ffd46a 0%,#f47a25 42%,rgba(180,56,43,.15) 76%,transparent 100%)"
+                      : "radial-gradient(ellipse at 50% 78%,#fff1a6 0%,#ff9b2f 38%,rgba(180,56,43,.18) 78%,transparent 100%)",
+                  filter: "blur(1px)",
+                  transformOrigin: "50% 100%",
+                  animation: `lhFlame ${0.95 + i * 0.08}s ease-in-out ${i * 0.12}s infinite`,
+                  opacity: 0.9,
+                }}
+              />
+            ))}
+          </div>
+
+          {baseImage ? (
+            <div style={{
+              position: "absolute",
+              inset: 0,
+              borderRadius: "50%",
+              overflow: "hidden",
+              border: "3px solid #9a7b4a",
+              boxShadow: "0 0 0 4px rgba(90,70,40,.2), inset 0 0 20px rgba(0,0,0,.15)",
+            }}>
+              <img src={baseImage} alt="锅底" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+            </div>
+          ) : (
+            <YuanyangPot />
+          )}
+
+          <div
+            style={{
+              position: "absolute",
+              inset: 22,
+              borderRadius: "50%",
+              boxShadow: "inset 0 0 24px rgba(255,232,160,.22), 0 0 30px rgba(255,100,34,.22)",
+              animation: "lhBrothBoil 1.25s ease-in-out infinite",
+              pointerEvents: "none",
+            }}
+          />
+
+          {/* Bubbles */}
+          {[
+            { l: "34%", b: "30%", s: 10 },
+            { l: "48%", b: "26%", s: 12 },
+            { l: "60%", b: "30%", s: 8 },
+            { l: "42%", b: "34%", s: 7 },
+            { l: "53%", b: "38%", s: 6 },
+          ].map((b, i) => (
+            <span
+              key={i}
+              style={{
+                position: "absolute",
+                left: b.l,
+                bottom: b.b,
+                width: b.s,
+                height: b.s,
+                borderRadius: "50%",
+                background: "rgba(255,246,218,.72)",
+                boxShadow: "0 0 8px rgba(255,235,180,.28)",
+                animation: `lhBub ${2.0 + i * 0.2}s ease-in ${i * 0.3}s infinite`,
+              }}
+            />
+          ))}
+
+          {/* Steam */}
+          {[0, 1, 2].map((i) => (
+            <span
+              key={i}
+              style={{
+                position: "absolute",
+                left: `${25 + i * 15}%`,
+                top: `${-4 + (i % 2) * 4}%`,
+                width: 70 + i * 12,
+                height: 50,
+                background:
+                  "radial-gradient(ellipse at 50% 100%,rgba(255,250,235,.6),transparent 70%)",
+                filter: "blur(6px)",
+                animation: `lhSteam ${2.4 + i * 0.35}s ease-in-out ${i * 0.35}s infinite`,
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Observation text */}
+        <div style={{ width: "100%", textAlign: "center", margin: "20px 0" }}>
+          {BOIL_LINES.map((t, i) => (
+            <div
+              key={i}
+              style={{
+                fontFamily: serif,
+                fontWeight: 600,
+                fontSize: 19,
+                letterSpacing: ".1em",
+                color: "#f3e6c4",
+                opacity: i < boilStep ? 1 : 0,
+                transform: `translateY(${i < boilStep ? 0 : 10}px)`,
+                transition: "all .8s ease",
+                margin: "5px 0",
+              }}
+            >
+              {t}
+            </div>
+          ))}
+        </div>
+
+        {/* Button Action */}
+        <div style={{ width: "100%", textAlign: "center", marginBottom: 20 }}>
+          {!boilReady ? (
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 10,
+                color: "#caa05a",
+                fontSize: 13,
+                letterSpacing: ".15em",
+              }}
+            >
+              <span
+                style={{
+                  width: 14,
+                  height: 14,
+                  border: "2px solid rgba(202,160,90,.3)",
+                  borderTopColor: "#caa05a",
+                  borderRadius: "50%",
+                  animation: "lhSpin .8s linear infinite",
+                  display: "inline-block",
+                }}
+              />
+              开火沸腾中 · AI 正在整合你的选择…
+            </div>
+          ) : storyLoading ? (
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 10,
+                color: "#caa05a",
+                fontSize: 13,
+                letterSpacing: ".15em",
+              }}
+            >
+              <span
+                style={{
+                  width: 14,
+                  height: 14,
+                  border: "2px solid rgba(202,160,90,.3)",
+                  borderTopColor: "#caa05a",
+                  borderRadius: "50%",
+                  animation: "lhSpin .8s linear infinite",
+                  display: "inline-block",
+                }}
+              />
+              <span
+                key={tipIndex}
+                style={{
+                  animation: "lhFade 0.5s ease both",
+                  display: "inline-block",
+                }}
+              >
+                {tips[tipIndex]}
+              </span>
+            </div>
+          ) : (
+            <button
+              onClick={onReport}
+              style={{
+                ...btnPrimary,
+                border: "1.5px solid #caa05a",
+                fontSize: 16,
+                letterSpacing: ".12em",
+                boxShadow: "0 0 20px rgba(202,160,90,.3)",
+                animation: "lhFade .6s ease both",
+                width: "100%",
+                maxWidth: 280,
+              }}
+            >
+              查看人生火锅报告
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -1615,6 +2314,7 @@ function BottomBar({ children }: { children: React.ReactNode }) {
 }
 
 function StepRail({ step }: { step: Step }) {
+  const isPortrait = useIsPortrait();
   const steps: { key: Step; label: string }[] = [
     { key: "base", label: "锅底" },
     { key: "ingredients", label: "食材" },
@@ -1624,7 +2324,19 @@ function StepRail({ step }: { step: Step }) {
   return (
     <div
       className="lh-panel"
-      style={{
+      style={isPortrait ? {
+        display: "flex",
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        width: "calc(100% - 32px)",
+        maxWidth: 420,
+        margin: "16px auto 0",
+        borderRadius: 8,
+        padding: "10px 14px",
+        color: "#5a4630",
+        boxSizing: "border-box",
+      } : {
         position: "absolute",
         left: 32,
         top: 30,
@@ -1634,8 +2346,8 @@ function StepRail({ step }: { step: Step }) {
         color: "#5a4630",
       }}
     >
-      <div style={{ fontSize: 11, letterSpacing: ".26em", color: "#9a6b3a" }}>当前火候</div>
-      <div style={{ display: "flex", gap: 7, marginTop: 11 }}>
+      <div style={isPortrait ? { fontSize: 11, letterSpacing: ".12em", color: "#9a6b3a", flexShrink: 0, marginRight: 12 } : { fontSize: 11, letterSpacing: ".26em", color: "#9a6b3a" }}>当前火候</div>
+      <div style={{ display: "flex", gap: 7, flex: 1, marginTop: isPortrait ? 0 : 11 }}>
         {steps.map((s, i) => {
           const active = i <= current;
           return (
@@ -1650,7 +2362,7 @@ function StepRail({ step }: { step: Step }) {
               />
               <div
                 style={{
-                  marginTop: 6,
+                  marginTop: 4,
                   fontSize: 10,
                   color: active ? "#7a2418" : "#a98f63",
                   textAlign: "center",
@@ -1681,6 +2393,7 @@ function ObserverPanel({
   pickToast: string;
   lifeLeft: number;
 }) {
+  const isPortrait = useIsPortrait();
   const dark = step === "boiling";
   const selected = [...bases, ...ings, ...conds]
     .map((id) => itemById(id)?.name)
@@ -1698,7 +2411,17 @@ function ObserverPanel({
   return (
     <div
       className={dark ? "lh-panel-dark" : "lh-panel"}
-      style={{
+      style={isPortrait ? {
+        position: "relative",
+        width: "calc(100% - 32px)",
+        maxWidth: 420,
+        margin: "12px auto 0",
+        borderRadius: 8,
+        padding: 12,
+        color: dark ? "#f3e6c4" : "#3a2c1c",
+        boxSizing: "border-box",
+        animation: "lhFade .45s ease both",
+      } : {
         position: "absolute",
         right: 28,
         top: step === "boiling" ? undefined : 28,
@@ -1725,16 +2448,16 @@ function ObserverPanel({
           AI 观察中
         </div>
       </div>
-      <div style={{ fontFamily: serif, fontSize: 15, lineHeight: 1.55, marginTop: 10 }}>
+      <div style={{ fontFamily: serif, fontSize: 13, lineHeight: 1.5, marginTop: 6 }}>
         {pickToast || copy}
       </div>
       {selected && (
         <div
           style={{
-            marginTop: 10,
-            fontSize: 11,
+            marginTop: 6,
+            fontSize: 10,
             color: dark ? "#caa05a" : "#8a6a44",
-            lineHeight: 1.5,
+            lineHeight: 1.4,
           }}
         >
           最近入锅 · {selected}
@@ -1818,22 +2541,29 @@ function CenterPot({
   baseImage,
   baseColor,
   bits,
+  yOffset,
 }: {
   size: number;
   baseImage?: string;
   baseColor?: string;
   bits?: string[];
+  yOffset?: number;
 }) {
+  const isPortrait = useIsPortrait();
+  const actualSize = isPortrait ? 220 : size;
+  const potX = isPortrait ? "50%" : C.cx;
+  const potY = isPortrait ? (yOffset ?? 240) : 400;
+
   return (
     <>
       <div
         style={{
           position: "absolute",
-          left: C.cx,
-          top: 400,
+          left: potX,
+          top: potY,
           transform: "translate(-50%,-50%)",
-          width: size,
-          height: size,
+          width: actualSize,
+          height: actualSize,
         }}
       >
         {baseImage ? (
@@ -1869,7 +2599,7 @@ function CenterPot({
               const it = INGREDIENTS.find((x) => x.id === id);
               if (!it) return null;
               const a = i * 1.3;
-              const r = 40 + (i % 3) * 14;
+              const r = (isPortrait ? 25 : 40) + (i % 3) * (isPortrait ? 8 : 14);
               return (
                 <span
                   key={id}
@@ -1878,6 +2608,7 @@ function CenterPot({
                     position: "absolute",
                     left: `calc(50% + ${r * Math.cos(a)}px)`,
                     top: `calc(48% + ${r * Math.sin(a)}px)`,
+                    transform: `translate(-50%,-50%) rotate(${i * 19}deg) scale(${isPortrait ? 0.75 : 1})`,
                   }}
                 />
               );
@@ -1889,11 +2620,11 @@ function CenterPot({
       <div
         style={{
           position: "absolute",
-          left: 640,
-          top: 235,
+          left: isPortrait ? "50%" : 640,
+          top: isPortrait ? (potY - actualSize / 2 - 15) : 235,
           transform: "translateX(-50%)",
-          width: 120,
-          height: 46,
+          width: isPortrait ? 80 : 120,
+          height: isPortrait ? 30 : 46,
           background: "radial-gradient(ellipse at 50% 100%,rgba(255,255,255,.6),transparent 70%)",
           filter: "blur(5px)",
           animation: "lhSteam 3.4s ease-in-out infinite",

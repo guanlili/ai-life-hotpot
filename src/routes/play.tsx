@@ -8,6 +8,7 @@ import { useGestureGame, type GestureFood } from "@/hooks/useGestureGame";
 import type { GestureState } from "@/hooks/useHandGesture";
 import { encodeSummary, type Pick, type SelectionSummary } from "@/lib/scoring";
 import { loadSession, saveSession } from "@/lib/session";
+import { generateStory } from "@/lib/llm";
 
 type Step = "base" | "ingredients" | "sauce" | "boiling";
 
@@ -141,6 +142,8 @@ function Play() {
   const picksRef = useRef<Pick[]>([]);
   const stepStartRef = useRef(Date.now());
   const orderRef = useRef(0);
+  const [story, setStory] = useState<string>("");
+  const [storyLoading, setStoryLoading] = useState(false);
 
   // Gesture game state
   const [gestureEnabled, setGestureEnabled] = useState(false);
@@ -214,6 +217,30 @@ function Play() {
     return () => clearInterval(id);
   }, [step]);
 
+  // 进入沸腾时用大模型生成人生故事(后台进行，沸腾动画与推演等待共同遮盖；无 key/失败则留空)
+  useEffect(() => {
+    if (step !== "boiling") return;
+    const sess = loadSession();
+    const summary: SelectionSummary = {
+      base: bases,
+      ingredients: ings,
+      condiments: conds,
+      picks: picksRef.current,
+    };
+    let active = true;
+    setStoryLoading(true);
+    generateStory(summary, sess.photoFeatures)
+      .then((s) => {
+        if (active && s) setStory(s);
+      })
+      .finally(() => {
+        if (active) setStoryLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [step, bases, ings, conds]);
+
   const recordPick = (id: string) => {
     const now = Date.now();
     const item = itemById(id);
@@ -277,6 +304,7 @@ function Play() {
       condiments: conds,
       picks: picksRef.current,
       nickname: sess.nickname,
+      story: story || undefined,
     };
     saveSession({ ...sess, ...summary });
     navigate({ to: "/report/$id", params: { id: encodeSummary(summary) } });
@@ -334,6 +362,7 @@ function Play() {
         <BoilStep
           boilStep={boilStep}
           boilReady={boilReady}
+          storyLoading={storyLoading}
           leftColor={leftColor}
           rightColor={rightColor}
           onReport={goReport}
@@ -1372,16 +1401,36 @@ function SauceStep({
 function BoilStep({
   boilStep,
   boilReady,
+  storyLoading,
   leftColor,
   rightColor,
   onReport,
 }: {
   boilStep: number;
   boilReady: boolean;
+  storyLoading: boolean;
   leftColor?: string;
   rightColor?: string;
   onReport: () => void;
 }) {
+  const [tipIndex, setTipIndex] = useState(0);
+
+  const tips = [
+    "正在融合锅底与食材风味...",
+    "正在计算 100 金币人生分配...",
+    "正在结合火锅推演人生哲理...",
+    "AI 观察员正在为您撰写命运判词...",
+    "正在整合你的命运故事轨迹..."
+  ];
+
+  useEffect(() => {
+    if (!storyLoading) return;
+    const timer = setInterval(() => {
+      setTipIndex((prev) => (prev + 1) % tips.length);
+    }, 2200);
+    return () => clearInterval(timer);
+  }, [storyLoading]);
+
   return (
     <>
       <div
@@ -1549,6 +1598,38 @@ function BoilStep({
               }}
             />
             开火沸腾中 · AI 正在整合你的选择…
+          </div>
+        ) : storyLoading ? (
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 12,
+              color: "#caa05a",
+              fontSize: 14,
+              letterSpacing: ".2em",
+            }}
+          >
+            <span
+              style={{
+                width: 18,
+                height: 18,
+                border: "2px solid rgba(202,160,90,.3)",
+                borderTopColor: "#caa05a",
+                borderRadius: "50%",
+                animation: "lhSpin .8s linear infinite",
+                display: "inline-block",
+              }}
+            />
+            <span
+              key={tipIndex}
+              style={{
+                animation: "lhFade 0.5s ease both",
+                display: "inline-block",
+              }}
+            >
+              {tips[tipIndex]}
+            </span>
           </div>
         ) : (
           <button

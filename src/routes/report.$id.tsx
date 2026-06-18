@@ -135,10 +135,14 @@ function Report() {
         setStory(summary.story);
         setStoryError(false);
       } else {
+        // 先回落本地静态模板故事，免去用户等待；再在后台异步推演并替换
+        if (report) {
+          setStory(report.story);
+        }
         fetchStory();
       }
     }
-  }, [summary]);
+  }, [summary, report]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -385,7 +389,7 @@ function Report() {
               <div style={{ flex: "1 1 auto", minHeight: 12 }} />
 
               {/* 命运点题:锅名 + 一句命运总结 */}
-              {parsed.title ? (
+              {parsed.title && (
                 <div
                   style={{
                     fontFamily: serif,
@@ -398,33 +402,8 @@ function Report() {
                 >
                   {parsed.title}
                 </div>
-              ) : storyLoading ? (
-                <div
-                  style={{
-                    fontFamily: serif,
-                    fontWeight: 700,
-                    fontSize: 16,
-                    color: "#9a6b3a",
-                    position: "relative",
-                    animation: "lhPulse 1.5s infinite",
-                  }}
-                >
-                  [ AI 正在结合火锅推演命运之名... ]
-                </div>
-              ) : storyError ? (
-                <div
-                  style={{
-                    fontFamily: serif,
-                    fontSize: 14,
-                    color: "#b4382b",
-                    position: "relative",
-                  }}
-                >
-                  [ 命运故事生成失败 ]
-                </div>
-              ) : null}
-
-              {parsed.slogan ? (
+              )}
+              {parsed.slogan && (
                 <div
                   style={{
                     fontFamily: serif,
@@ -437,24 +416,10 @@ function Report() {
                 >
                   {parsed.slogan}
                 </div>
-              ) : storyLoading ? (
-                <div
-                  style={{
-                    fontFamily: serif,
-                    fontSize: 11,
-                    color: "#8a6a44",
-                    marginTop: 8,
-                    position: "relative",
-                    opacity: 0.85,
-                    animation: "lhPulse 1.5s infinite",
-                  }}
-                >
-                  “正在连线命运星空，推演人生轨迹...”
-                </div>
-              ) : null}
+              )}
 
               {/* 虚线分割线 */}
-              {(parsed.observer || storyLoading || storyError) && (
+              {parsed.observer && (
                 <div
                   style={{
                     height: 1,
@@ -465,7 +430,7 @@ function Report() {
               )}
 
               {/* AI观察员评价 */}
-              {parsed.observer ? (
+              {parsed.observer && (
                 <div
                   style={{
                     position: "relative",
@@ -498,9 +463,24 @@ function Report() {
                       color: "#9a6b3a",
                       marginBottom: 6,
                       fontWeight: 600,
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
                     }}
                   >
-                    A I  观  察  员  评  价
+                    <span>A I  观  察  员  评  价</span>
+                    {storyLoading && (
+                      <span
+                        style={{
+                          fontSize: 9,
+                          color: "#caa05a",
+                          animation: "lhPulse 1.5s infinite",
+                          fontWeight: "normal",
+                        }}
+                      >
+                        ✨ AI正在精修命运哲理...
+                      </span>
+                    )}
                   </div>
                   <div
                     style={{
@@ -515,70 +495,7 @@ function Report() {
                     {parsed.observer}
                   </div>
                 </div>
-              ) : storyLoading ? (
-                <div
-                  style={{
-                    position: "relative",
-                    background: "rgba(154,123,74,.02)",
-                    border: "1px dashed rgba(154,123,74,.18)",
-                    borderRadius: 8,
-                    padding: "16px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 10,
-                  }}
-                >
-                  <span
-                    style={{
-                      width: 14,
-                      height: 14,
-                      border: "2px solid rgba(202,160,90,.3)",
-                      borderTopColor: "#caa05a",
-                      borderRadius: "50%",
-                      animation: "lhSpin .8s linear infinite",
-                      display: "inline-block",
-                    }}
-                  />
-                  <span style={{ fontSize: 11, color: "#9a6b3a", letterSpacing: ".1em", animation: "lhPulse 1.5s infinite" }}>
-                    AI 观察员正在为您撰写评语...
-                  </span>
-                </div>
-              ) : storyError ? (
-                <div
-                  style={{
-                    position: "relative",
-                    background: "rgba(180,56,43,.02)",
-                    border: "1px dashed rgba(180,56,43,.25)",
-                    borderRadius: 8,
-                    padding: "14px 18px",
-                    textAlign: "center",
-                  }}
-                >
-                  <div style={{ fontSize: 11, color: "#b4382b", marginBottom: 8 }}>
-                    大模型评语撰写失败
-                  </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      fetchStory();
-                    }}
-                    style={{
-                      border: "1px solid #b4382b",
-                      background: "transparent",
-                      color: "#b4382b",
-                      padding: "4px 12px",
-                      borderRadius: 6,
-                      fontSize: 11,
-                      cursor: "pointer",
-                      fontFamily: serif,
-                      fontWeight: 700,
-                    }}
-                  >
-                    重新推演命运
-                  </button>
-                </div>
-              ) : null}
+              )}
 
               {/* 切换到背面的按钮 */}
               <div
@@ -753,50 +670,39 @@ function Report() {
                     lineHeight: 1.65,
                     color: "#3a2c1c",
                     whiteSpace: "pre-line",
-                    display: (storyLoading || storyError) ? "flex" : "block",
-                    flexDirection: "column",
-                    alignItems: (storyLoading || storyError) ? "center" : "stretch",
-                    justifyContent: (storyLoading || storyError) ? "center" : "flex-start",
                   }}
                 >
-                  {storyLoading ? (
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, color: "#caa05a" }}>
+                  {storyLoading && (
+                    <div
+                      style={{
+                        padding: "6px 10px",
+                        background: "rgba(202,160,90,.06)",
+                        border: "1px dashed rgba(202,160,90,.25)",
+                        borderRadius: 6,
+                        fontSize: 11,
+                        color: "#9a6b3a",
+                        marginBottom: 10,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        animation: "lhPulse 1.5s infinite",
+                      }}
+                    >
                       <span
                         style={{
-                          width: 20,
-                          height: 20,
-                          border: "2px solid rgba(202,160,90,.3)",
+                          width: 10,
+                          height: 10,
+                          border: "1.5px solid rgba(202,160,90,.3)",
                           borderTopColor: "#caa05a",
                           borderRadius: "50%",
                           animation: "lhSpin .8s linear infinite",
                           display: "inline-block",
                         }}
                       />
-                      <span style={{ fontSize: 13, fontFamily: serif }}>AI 正在为您撰写命运故事...</span>
+                      <span>大模型正在为您深度推演故事细节，稍后将自动无缝升级...</span>
                     </div>
-                  ) : storyError ? (
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, padding: "20px 0" }}>
-                      <span style={{ color: "#b4382b", fontSize: 13, fontFamily: serif }}>命运故事推演失败，未生成内容。</span>
-                      <button
-                        onClick={fetchStory}
-                        style={{
-                          border: "1.5px solid #b4382b",
-                          background: "transparent",
-                          color: "#b4382b",
-                          padding: "6px 18px",
-                          borderRadius: 6,
-                          cursor: "pointer",
-                          fontFamily: serif,
-                          fontWeight: 700,
-                          fontSize: 12,
-                        }}
-                      >
-                        重新生成
-                      </button>
-                    </div>
-                  ) : (
-                    parsed.narrative || story
                   )}
+                  {parsed.narrative || story}
                 </div>
 
                 {/* 底部: 扫码保存 + 按钮 */}

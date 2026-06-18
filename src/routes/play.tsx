@@ -1,9 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { BASES, CONDIMENTS, INGREDIENTS, itemById } from "@/data/hotpot";
 import { Stage } from "@/components/Stage";
 import { YuanyangPot } from "@/components/hotpot-art";
 import { GestureGameLayer } from "@/components/GestureGameLayer";
+import { useGestureGame, type GestureFood } from "@/hooks/useGestureGame";
+import type { GestureState } from "@/hooks/useHandGesture";
 import { encodeSummary, type Pick, type SelectionSummary } from "@/lib/scoring";
 import { loadSession, saveSession } from "@/lib/session";
 
@@ -23,6 +25,9 @@ const serif = "'Noto Serif SC',serif";
 const BOIL_LINES = ["我们已经观察你三分钟。", "你以为自己在配火锅。", "其实，你正在构建人生。"];
 const TIMER_SECONDS = 60;
 const C = { cx: 640, cy: 412 };
+const GAME_W = 1280;
+const GAME_H = 720;
+const HOTPOT_R = 95;
 
 const btnPrimary: CSSProperties = {
   border: "none",
@@ -139,19 +144,48 @@ function Play() {
 
   // Gesture game state
   const [gestureEnabled, setGestureEnabled] = useState(false);
-  const [grabbedFoodId, setGrabbedFoodId] = useState<string | null>(null);
   const [showGestureGuide, setShowGestureGuide] = useState(true);
+  const [currentGesture, setCurrentGesture] = useState<GestureState>("none");
 
-  // Calculate food positions for gesture detection
-  const foodPositions = INGREDIENTS.map((it, i) => {
-    const a = -Math.PI / 2 + (i + 0.5) * ((2 * Math.PI) / 12);
-    return {
-      id: it.id,
-      x: C.cx + 440 * Math.cos(a),
-      y: C.cy + 200 * Math.sin(a),
-      originX: C.cx + 440 * Math.cos(a),
-      originY: C.cy + 200 * Math.sin(a),
-    };
+  // 初始食材（环形排布，避开锅）
+  const initialFoods = useMemo<GestureFood[]>(
+    () =>
+      INGREDIENTS.map((it, i) => {
+        const a = -Math.PI / 2 + (i + 0.5) * ((2 * Math.PI) / INGREDIENTS.length);
+        return {
+          id: it.id,
+          name: it.name,
+          food: it.food,
+          kind: it.kind,
+          x: C.cx + 440 * Math.cos(a),
+          y: C.cy + 200 * Math.sin(a),
+          originX: C.cx + 440 * Math.cos(a),
+          originY: C.cy + 200 * Math.sin(a),
+          grabbed: false,
+        };
+      }),
+    [],
+  );
+
+  const {
+    foods: gestureFoods,
+    cursor: gestureCursor,
+    grabbedId,
+    moveCursor,
+    feedGesture,
+  } = useGestureGame({
+    initialFoods,
+    gameW: GAME_W,
+    gameH: GAME_H,
+    hotpotX: C.cx,
+    hotpotY: C.cy,
+    hotpotR: HOTPOT_R,
+    onDropped: ({ foodId, dropped }) => {
+      if (dropped) {
+        recordPick(foodId);
+        setIngs((prev) => (prev.includes(foodId) ? prev : [...prev, foodId]));
+      }
+    },
   });
 
   useEffect(() => {
@@ -191,21 +225,6 @@ function Play() {
     stepStartRef.current = now;
     if (item) {
       setPickToast(`${item.name} 已入锅 · AI 记下了你的第 ${orderRef.current} 次选择`);
-    }
-  };
-
-  // Handle food grabbed
-  const handleFoodGrabbed = (foodId: string) => {
-    setGrabbedFoodId(foodId);
-  };
-
-  // Handle food dropped - only add to ings when success
-  const handleFoodDropped = (foodId: string, success: boolean) => {
-    setGrabbedFoodId(null);
-    if (success) {
-      // Record pick for AI analysis
-      recordPick(foodId);
-      setIngs([...ings, foodId]);
     }
   };
 
@@ -288,10 +307,17 @@ function Play() {
           />
           <GestureGameLayer
             enabled={gestureEnabled && step === "ingredients"}
-            foodPositions={foodPositions}
-            grabbedFoodId={grabbedFoodId}
-            onFoodGrabbed={handleFoodGrabbed}
-            onFoodDropped={handleFoodDropped}
+            foods={gestureFoods}
+            grabbedId={grabbedId}
+            gesture={currentGesture}
+            cursor={gestureCursor}
+            onHandSample={({ x, y, detected, gesture }) => {
+              setCurrentGesture(gesture);
+              feedGesture(gesture);
+              if (detected) {
+                moveCursor(x * GAME_W, y * GAME_H);
+              }
+            }}
             showGuide={showGestureGuide}
             onCloseGuide={() => setShowGestureGuide(false)}
           />

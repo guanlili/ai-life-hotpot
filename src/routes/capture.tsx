@@ -249,7 +249,14 @@ function Capture() {
               textAlign: "center",
             }}
           >
-            <div style={{ fontFamily: serif, fontSize: 19, color: "#f3e6c4", letterSpacing: ".1em" }}>
+            <div
+              style={{
+                fontFamily: serif,
+                fontSize: 19,
+                color: "#f3e6c4",
+                letterSpacing: ".1em",
+              }}
+            >
               AI 将读取你的气质特征
             </div>
             <div style={{ fontSize: 12, lineHeight: 1.7, color: "#d9c79a", maxWidth: 240 }}>

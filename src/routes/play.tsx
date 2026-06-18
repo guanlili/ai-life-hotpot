@@ -218,7 +218,9 @@ function Play() {
     return () => clearInterval(id);
   }, [step]);
 
-  // 进入沸腾时用大模型生成人生故事(后台进行，沸腾动画与推演等待共同遮盖；无 key/失败则留空)
+  // 进入沸腾时用大模型生成人生故事(后台进行，沸腾动画与推演等待共同遮盖；无 key/失败则留空)。
+  // 沸腾为最后一步,进入时 bases/ings/conds 已是最终快照,故依赖仅 [step]——
+  // 否则沸腾期间这些数组若发生引用变化会重复发起 LLM 调用。active 标志兜底防止过期写入。
   useEffect(() => {
     if (step !== "boiling") return;
     const sess = loadSession();
@@ -240,7 +242,8 @@ function Play() {
     return () => {
       active = false;
     };
-  }, [step, bases, ings, conds]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
 
   const recordPick = (id: string) => {
     const now = Date.now();
@@ -863,10 +866,14 @@ function IngStep({
   onToggleGesture?: () => void;
 }) {
   const isPortrait = useIsPortrait();
-  const ring = INGREDIENTS.map((it, i) => {
-    const a = -Math.PI / 2 + (i + 0.5) * ((2 * Math.PI) / 12);
-    return { it, x: C.cx + 440 * Math.cos(a), y: C.cy + 200 * Math.sin(a) };
-  });
+  const ring = useMemo(
+    () =>
+      INGREDIENTS.map((it, i) => {
+        const a = -Math.PI / 2 + (i + 0.5) * ((2 * Math.PI) / INGREDIENTS.length);
+        return { it, x: C.cx + 440 * Math.cos(a), y: C.cy + 200 * Math.sin(a) };
+      }),
+    [],
+  );
   const mm = Math.floor(secs / 60);
   const ss = String(secs % 60).padStart(2, "0");
   const timesUp = secs <= 0;

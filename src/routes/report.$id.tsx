@@ -260,37 +260,46 @@ function Report() {
 
   const parsed = useMemo(() => parseStory(story), [story]);
 
-  const fetchStory = async () => {
+  // isCancelled:由调用方(如 effect 清理)提供,用于在组件重渲染/卸载后丢弃过期结果,避免竞态覆盖。
+  // 重试按钮等外部调用可不传,直接写入。
+  const fetchStory = async (isCancelled?: () => boolean) => {
     if (!summary) return;
     setStoryLoading(true);
     setStoryError(false);
     try {
       const s = await generateStory(summary, "");
+      if (isCancelled?.()) return;
       if (s) {
         setStory(s);
       } else {
         setStoryError(true);
       }
     } catch {
+      if (isCancelled?.()) return;
       setStoryError(true);
     } finally {
-      setStoryLoading(false);
+      if (!isCancelled?.()) setStoryLoading(false);
     }
   };
 
   useEffect(() => {
-    if (summary) {
-      if (summary.story) {
-        setStory(summary.story);
-        setStoryError(false);
-      } else {
-        // 先回落本地静态模板故事，免去用户等待；再在后台异步推演并替换
-        if (report) {
-          setStory(report.story);
-        }
-        fetchStory();
-      }
+    if (!summary) return;
+    if (summary.story) {
+      setStory(summary.story);
+      setStoryError(false);
+      return;
     }
+    // 先回落本地静态模板故事，免去用户等待；再在后台异步推演并替换
+    if (report) {
+      setStory(report.story);
+    }
+    // summary/report 变化(如换 id)时丢弃上一次在途结果,防止两次 LLM 调用竞态覆盖
+    let cancelled = false;
+    fetchStory(() => cancelled);
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [summary, report]);
 
   useEffect(() => {

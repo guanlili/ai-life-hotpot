@@ -42,7 +42,7 @@ export interface Ingredient {
   name: string;
   food: string; // FoodGlyph 的 key
   kind: "meat" | "veg";
-  cost: number; // 人生值消耗
+  cost: number; // 金币消耗
   tint: string; // 落锅小圆点颜色
   weights: Weights;
 }

@@ -65,6 +65,42 @@ function ReportError() {
   );
 }
 
+/**
+ * 把 AI 命运叙事拆成 标题《》/ 一句命运总结 / AI观察员 / 正文(节点+结尾)。
+ * 解析失败(或回落到确定性模板时)对应字段为 null,正文兜底为原文。
+ */
+function parseStory(raw: string): {
+  title: string | null;
+  slogan: string | null;
+  observer: string | null;
+  narrative: string;
+} {
+  const full = (raw ?? "").trim();
+  if (!full) return { title: null, slogan: null, observer: null, narrative: "" };
+  // 观察员:【AI观察员评价】 或 "AI观察员评价：" 之后的内容
+  const obsRe = /【\s*AI\s*观察员评价\s*】|AI\s*观察员评价\s*[：:]/;
+  const obsIdx = full.search(obsRe);
+  let observer: string | null = null;
+  let body = full;
+  if (obsIdx >= 0) {
+    observer = full.slice(obsIdx).replace(obsRe, "").replace(/^[\s：:]*/, "").trim();
+    body = full.slice(0, obsIdx).trim();
+  }
+  // 标题:第一个《...》
+  const titleMatch = full.match(/《[^》\n]{2,28}》/);
+  const title = titleMatch ? titleMatch[0] : null;
+  // slogan:一对引号包住的短句(6~48 字)
+  const sloganMatch = body.match(/["“''「『][^"”''」』\n]{6,48}。?["”''」』]/);
+  const slogan = sloganMatch ? sloganMatch[0] : null;
+  // 正文去掉明显的结构标签行
+  const narrative = body
+    .replace(/^[ \t]*你的命运火锅[ \t]*\r?\n?/m, "")
+    .replace(/^[ \t]*标题[ \t]*[：:][ \t]*\r?\n?/m, "")
+    .replace(/^[ \t]*一句命运总结[^\n]*\r?\n?/m, "")
+    .trim();
+  return { title, slogan, observer, narrative: narrative || body };
+}
+
 function Report() {
   const { id } = Route.useParams();
   const summary = useMemo(() => decodeSummary(id), [id]);
@@ -85,6 +121,7 @@ function Report() {
   if (!summary || !report) return <ReportError />;
   // 优先用生成时烤进链接的 AI 故事;没有则回落模板
   const storyText = summary.story ?? report.story;
+  const parsed = parseStory(storyText);
   const chosenNames = [...summary.base, ...summary.ingredients, ...summary.condiments]
     .map((id) => itemById(id)?.name)
     .filter(Boolean)
@@ -112,22 +149,7 @@ function Report() {
           animation: "lhFade .5s ease both",
         }}
       >
-        {/* 左竖排 tagline */}
-        <div
-          style={{
-            writingMode: "vertical-rl",
-            fontFamily: serif,
-            fontWeight: 600,
-            fontSize: 19,
-            letterSpacing: ".4em",
-            color: "#9a3a2c",
-            height: 560,
-          }}
-        >
-          你 以 为 在 配 火 锅 · 其 实 在 构 建 人 生
-        </div>
-
-        {/* 报告卡 */}
+        {/* 报告卡(精简:口味 + 金币 + 标题/slogan + 观察员) */}
         <div
           style={{
             width: 440,
@@ -309,30 +331,65 @@ function Report() {
             ))}
           </div>
 
-          {/* 人生故事 */}
-          <div
-            style={{
-              fontSize: 11,
-              letterSpacing: ".3em",
-              color: "#9a6b3a",
-              marginTop: 20,
-              position: "relative",
-            }}
-          >
-            人 生 故 事
-          </div>
-          <div
-            style={{
-              fontFamily: serif,
-              fontSize: 12.4,
-              lineHeight: 1.58,
-              color: "#3a2c1c",
-              marginTop: 6,
-              position: "relative",
-            }}
-          >
-            {storyText}
-          </div>
+          {/* 命运点题:锅名 + 一句命运总结(AI 解析,缺失则不渲染) */}
+          {parsed.title && (
+            <div
+              style={{
+                fontFamily: serif,
+                fontWeight: 900,
+                fontSize: 21,
+                lineHeight: 1.3,
+                color: "#7a2418",
+                marginTop: 20,
+                position: "relative",
+              }}
+            >
+              {parsed.title}
+            </div>
+          )}
+          {parsed.slogan && (
+            <div
+              style={{
+                fontFamily: serif,
+                fontSize: 13,
+                lineHeight: 1.5,
+                color: "#5a4630",
+                marginTop: 8,
+                position: "relative",
+              }}
+            >
+              {parsed.slogan}
+            </div>
+          )}
+
+          {/* AI观察员评价 */}
+          {parsed.observer && (
+            <>
+              <div
+                style={{
+                  fontSize: 11,
+                  letterSpacing: ".3em",
+                  color: "#9a6b3a",
+                  marginTop: 16,
+                  position: "relative",
+                }}
+              >
+                A I 观 察 员
+              </div>
+              <div
+                style={{
+                  fontFamily: serif,
+                  fontSize: 12.4,
+                  lineHeight: 1.6,
+                  color: "#3a2c1c",
+                  marginTop: 6,
+                  position: "relative",
+                }}
+              >
+                {parsed.observer}
+              </div>
+            </>
+          )}
 
           <div
             style={{
@@ -354,27 +411,77 @@ function Report() {
           </div>
         </div>
 
-        {/* 右:二维码 + 再涮一锅 */}
-        <div style={{ textAlign: "center", width: 230 }}>
+        {/* 右:命运故事栏(完整叙事 + 底部扫码/再涮) */}
+        <div
+          style={{
+            width: 440,
+            height: 668,
+            display: "flex",
+            flexDirection: "column",
+            background: "rgba(247,240,223,.55)",
+            border: "1px solid rgba(154,123,74,.4)",
+            borderRadius: 8,
+            padding: "26px 28px",
+            boxShadow: "0 24px 60px rgba(60,40,20,.22)",
+            color: "#2c2418",
+          }}
+        >
+          <div style={{ fontSize: 11, letterSpacing: ".3em", color: "#9a6b3a" }}>命 运 故 事</div>
           <div
-            className="lh-sweep"
             style={{
-              background: "#f7f0df",
-              border: "1px solid rgba(154,123,74,.4)",
-              borderRadius: 10,
-              padding: 20,
-              boxShadow: "0 16px 40px rgba(60,40,20,.25)",
+              fontFamily: serif,
+              fontWeight: 900,
+              fontSize: 22,
+              color: "#7a2418",
+              marginTop: 6,
+              lineHeight: 1.25,
+            }}
+          >
+            {parsed.title ?? report.flavor}
+          </div>
+          <div style={{ fontSize: 11, color: "#8a6a44", marginTop: 8, lineHeight: 1.6 }}>
+            命运主轴 · {DIM_LABEL[report.top[0]]} × {DIM_LABEL[report.top[1]]}
+            <br />
+            入锅 · {chosenNames.join(" / ")}
+          </div>
+
+          {/* 完整叙事:可滚 */}
+          <div
+            style={{
+              flex: 1,
+              marginTop: 14,
+              paddingRight: 6,
+              overflowY: "auto",
+              fontFamily: serif,
+              fontSize: 13,
+              lineHeight: 1.7,
+              color: "#3a2c1c",
+              whiteSpace: "pre-line",
+            }}
+          >
+            {parsed.narrative || storyText}
+          </div>
+
+          {/* 底部:扫码保存 + 再涮一锅 */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 16,
+              marginTop: 14,
+              paddingTop: 14,
+              borderTop: "1px solid rgba(154,123,74,.3)",
             }}
           >
             <div
               style={{
-                width: 160,
-                height: 160,
-                margin: "0 auto",
+                width: 104,
+                height: 104,
                 background: "#fff",
                 borderRadius: 6,
-                padding: 10,
+                padding: 6,
                 boxShadow: "inset 0 0 0 1px rgba(0,0,0,.06)",
+                flexShrink: 0,
               }}
             >
               {qr ? (
@@ -383,63 +490,34 @@ function Report() {
                 <div style={{ width: "100%", height: "100%", background: "#eee" }} />
               )}
             </div>
-            <div
-              style={{
-                fontFamily: serif,
-                fontWeight: 700,
-                fontSize: 16,
-                color: "#2c2418",
-                marginTop: 14,
-                letterSpacing: ".1em",
-              }}
-            >
-              扫码保存你的报告
-            </div>
-            <div style={{ fontSize: 11, color: "#8a6a44", marginTop: 5, lineHeight: 1.6 }}>
-              公网链接 · 可在手机查看
-              <br />
-              录屏分享到抖音
-            </div>
-          </div>
-          <div
-            style={{
-              marginTop: 14,
-              border: "1px solid rgba(154,123,74,.34)",
-              borderRadius: 8,
-              padding: "14px 16px",
-              background: "rgba(247,240,223,.72)",
-              boxShadow: "0 12px 30px rgba(60,40,20,.18)",
-              textAlign: "left",
-              color: "#3a2c1c",
-            }}
-          >
-            <div style={{ fontSize: 10, letterSpacing: ".24em", color: "#9a6b3a" }}>现场弹幕</div>
-            <div style={{ fontFamily: serif, fontWeight: 800, fontSize: 16, color: "#7a2418", marginTop: 6 }}>
-              {DIM_LABEL[report.top[0]]} × {DIM_LABEL[report.top[1]]}
-            </div>
-            <div style={{ fontSize: 11, lineHeight: 1.6, color: "#8a6a44", marginTop: 8 }}>
-              入锅记录 · {chosenNames.join(" / ")}
+            <div style={{ flex: 1 }}>
+              <div style={{ fontFamily: serif, fontWeight: 700, fontSize: 14, color: "#2c2418" }}>
+                扫码保存你的报告
+              </div>
+              <div style={{ fontSize: 11, color: "#8a6a44", marginTop: 4, lineHeight: 1.5 }}>
+                公网链接 · 手机可看
+              </div>
+              <Link
+                to="/"
+                style={{
+                  display: "inline-block",
+                  marginTop: 10,
+                  border: "1.5px solid #b4382b",
+                  padding: "8px 22px",
+                  borderRadius: 6,
+                  background: "transparent",
+                  color: "#b4382b",
+                  fontFamily: serif,
+                  fontWeight: 700,
+                  fontSize: 14,
+                  letterSpacing: ".14em",
+                  textDecoration: "none",
+                }}
+              >
+                再 涮 一 锅
+              </Link>
             </div>
           </div>
-          <Link
-            to="/"
-            style={{
-              marginTop: 16,
-              display: "inline-block",
-              border: "1.5px solid #b4382b",
-              padding: "12px 34px",
-              borderRadius: 6,
-              background: "transparent",
-              color: "#b4382b",
-              fontFamily: serif,
-              fontWeight: 700,
-              fontSize: 16,
-              letterSpacing: ".16em",
-              textDecoration: "none",
-            }}
-          >
-            再 涮 一 锅
-          </Link>
         </div>
       </div>
     </Stage>

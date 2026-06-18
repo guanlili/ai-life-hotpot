@@ -642,7 +642,7 @@ function IngStep({
                 letterSpacing: ".04em",
               }}
             >
-              {it.kind === "meat" ? "荤" : "素"} · −{it.cost}人生值
+              {it.kind === "meat" ? "荤" : "素"} · −{it.cost}金币
             </div>
           </div>
         );
@@ -707,9 +707,9 @@ function IngStep({
         </button>
       )}
 
-      {/* 人生值 */}
+      {/* 金币 */}
       <div style={{ position: "absolute", left: 34, bottom: 30 }}>
-        <div style={{ fontSize: 11, letterSpacing: ".3em", color: "#9a6b3a" }}>人生值</div>
+        <div style={{ fontSize: 11, letterSpacing: ".3em", color: "#9a6b3a" }}>金币</div>
         <div
           style={{
             fontFamily: serif,
@@ -1455,7 +1455,7 @@ function ObserverPanel({
     step === "base"
       ? "先选一口顺眼的锅。"
       : step === "ingredients"
-        ? `人生值剩余 ${lifeLeft}，越早下锅的选择权重越高。`
+        ? `金币剩余 ${lifeLeft}，越早下锅的选择权重越高。`
         : step === "sauce"
           ? "蘸料会改变处理事情的方式，想加几味加几味。"
           : "火锅正在沸腾，AI 正把选择顺序与犹豫时间合成报告。";

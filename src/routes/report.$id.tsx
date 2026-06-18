@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
-import QRCode from "qrcode";
 import { Stage } from "@/components/Stage";
 import { DIM_LABEL, itemById } from "@/data/hotpot";
 import { decodeSummary, encodeSummary } from "@/lib/scoring";
@@ -366,13 +365,25 @@ function Report() {
     // 扫码者进入报告页后，选择/金币分布一致，故事会回落模板或后台重新生成。
     const liteId = encodeSummary({ ...summary, story: undefined });
     const shareUrl = window.location.origin + window.location.pathname.replace(/[^/]+$/, liteId);
-    QRCode.toDataURL(shareUrl, {
-      width: 320,
-      margin: 1,
-      color: { dark: "#1c140c", light: "#ffffff" },
-    })
-      .then(setQr)
-      .catch(() => setQr(null));
+    // qrcode 库按需动态加载（约 18KB gzip），不进 report 首屏 chunk。
+    let cancelled = false;
+    import("qrcode")
+      .then(({ default: QRCode }) =>
+        QRCode.toDataURL(shareUrl, {
+          width: 320,
+          margin: 1,
+          color: { dark: "#1c140c", light: "#ffffff" },
+        }),
+      )
+      .then((d) => {
+        if (!cancelled) setQr(d);
+      })
+      .catch(() => {
+        if (!cancelled) setQr(null);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [id, summary]);
 
   if (!summary || !report) return <ReportError />;

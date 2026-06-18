@@ -18,12 +18,12 @@ import {
   BOIL_LINES,
   C,
   baseById,
-} from "./play/constants";
-import { StepRail, ObserverPanel } from "./play/shared";
-import { BaseStep } from "./play/BaseStep";
-import { IngStep } from "./play/IngStep";
-import { SauceStep } from "./play/SauceStep";
-import { BoilStep } from "./play/BoilStep";
+} from "@/components/play/constants";
+import { StepRail, ObserverPanel } from "@/components/play/shared";
+import { BaseStep } from "@/components/play/BaseStep";
+import { IngStep } from "@/components/play/IngStep";
+import { SauceStep } from "@/components/play/SauceStep";
+import { BoilStep } from "@/components/play/BoilStep";
 
 export const Route = createFileRoute("/play")({
   head: () => ({

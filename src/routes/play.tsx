@@ -4,6 +4,7 @@ import { BASES, CONDIMENTS, INGREDIENTS, itemById } from "@/data/hotpot";
 import { Stage } from "@/components/Stage";
 import { YuanyangPot } from "@/components/hotpot-art";
 import { encodeSummary, type Pick, type SelectionSummary } from "@/lib/scoring";
+import { generateStory } from "@/lib/llm";
 import { loadSession, saveSession } from "@/lib/session";
 
 type Step = "base" | "ingredients" | "sauce" | "boiling";
@@ -131,6 +132,7 @@ function Play() {
   const [conds, setConds] = useState<string[]>([]);
   const [secs, setSecs] = useState(TIMER_SECONDS);
   const [boilStep, setBoilStep] = useState(0);
+  const [story, setStory] = useState("");
   const [pickToast, setPickToast] = useState("张开手悬停，握拳抓取，放进锅里松开。");
   const picksRef = useRef<Pick[]>([]);
   const stepStartRef = useRef(Date.now());
@@ -161,6 +163,25 @@ function Play() {
     const id = setInterval(() => setBoilStep((s) => s + 1), 1500);
     return () => clearInterval(id);
   }, [step]);
+
+  // 进入沸腾时用大模型生成人生故事(后台进行,沸腾动画盖住等待;无 key/失败则留空 → 报告回落模板)
+  useEffect(() => {
+    if (step !== "boiling") return;
+    const sess = loadSession();
+    const summary: SelectionSummary = {
+      base: bases,
+      ingredients: ings,
+      condiments: conds,
+      picks: picksRef.current,
+    };
+    let active = true;
+    generateStory(summary, sess.photoFeatures).then((s) => {
+      if (active && s) setStory(s);
+    });
+    return () => {
+      active = false;
+    };
+  }, [step, bases, ings, conds]);
 
   const recordPick = (id: string) => {
     const now = Date.now();
@@ -221,6 +242,7 @@ function Play() {
       condiments: conds,
       picks: picksRef.current,
       nickname: sess.nickname,
+      story: story || undefined,
     };
     saveSession({ ...sess, ...summary });
     navigate({ to: "/report/$id", params: { id: encodeSummary(summary) } });

@@ -13,6 +13,8 @@ export interface SelectionSummary {
   picks: Pick[];
   photo?: string; // optional photo dataURL (kept in sessionStorage only)
   nickname?: string; // 用户昵称;仅展示用,不参与报告/金币生成
+  story?: string; // AI 生成的人生故事;生成后烤进分享链接,空则报告页回落模板
+  photoFeatures?: string; // 拍照识别的人物特征;仅 session 用,不进分享链接
 }
 
 export interface CoinDistribution {
@@ -71,7 +73,7 @@ export function topDims(coins: CoinDistribution, n = 2): Dim[] {
 // URL-safe encode/decode(报告可分享的核心)
 export function encodeSummary(s: SelectionSummary): string {
   // strip photo from URL payload (keep it local only)
-  const lite = { b: s.base, i: s.ingredients, c: s.condiments, p: s.picks, n: s.nickname };
+  const lite = { b: s.base, i: s.ingredients, c: s.condiments, p: s.picks, n: s.nickname, s: s.story };
   const json = JSON.stringify(lite);
   if (typeof window === "undefined") {
     return Buffer.from(json, "utf8").toString("base64url");
@@ -98,6 +100,7 @@ export function decodeSummary(id: string): SelectionSummary | null {
     condiments: lite.c ?? [],
     picks: lite.p ?? [],
     nickname: typeof lite.n === "string" ? lite.n : undefined,
+    story: typeof lite.s === "string" ? lite.s : undefined,
   };
   } catch {
     return null;

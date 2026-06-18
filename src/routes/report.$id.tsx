@@ -83,6 +83,8 @@ function Report() {
 
   const report = useMemo(() => (summary ? buildReport(summary) : null), [summary]);
   if (!summary || !report) return <ReportError />;
+  // 优先用生成时烤进链接的 AI 故事;没有则回落模板
+  const storyText = summary.story ?? report.story;
   const chosenNames = [...summary.base, ...summary.ingredients, ...summary.condiments]
     .map((id) => itemById(id)?.name)
     .filter(Boolean)
@@ -329,7 +331,7 @@ function Report() {
               position: "relative",
             }}
           >
-            {report.story}
+            {storyText}
           </div>
 
           <div

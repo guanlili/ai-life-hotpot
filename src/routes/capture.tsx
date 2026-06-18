@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Stage } from "@/components/Stage";
 import { Silhouette } from "@/components/hotpot-art";
 import { loadSession, saveSession } from "@/lib/session";
+import { recognizePhoto } from "@/lib/llm";
 
 export const Route = createFileRoute("/capture")({
   head: () => ({
@@ -72,6 +73,8 @@ function Capture() {
   const [photo, setPhoto] = useState<string | null>(null);
   const [captured, setCaptured] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [aiFeature, setAiFeature] = useState("");
+  const [reading, setReading] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -107,8 +110,18 @@ function Capture() {
     ctx.translate(c.width, 0);
     ctx.scale(-1, 1);
     ctx.drawImage(v, 0, 0, c.width, c.height);
-    setPhoto(c.toDataURL("image/jpeg", 0.7));
+    const dataUrl = c.toDataURL("image/jpeg", 0.7);
+    setPhoto(dataUrl);
     setCaptured(true);
+    setAiFeature("");
+    // 用 minimax-m3 识别人物特征;无 key / 失败则留空,UI 回落默认 chips
+    setReading(true);
+    recognizePhoto(dataUrl)
+      .then((text) => {
+        setAiFeature(text);
+        saveSession({ ...loadSession(), photoFeatures: text || undefined });
+      })
+      .finally(() => setReading(false));
   };
 
   const next = () => {
@@ -304,10 +317,10 @@ function Capture() {
               letterSpacing: ".2em",
               color: "#9a3a2c",
               marginBottom: 16,
-              animation: "lhPulse 1.4s ease-in-out infinite",
+              ...(reading ? { animation: "lhPulse 1.4s ease-in-out infinite" } : {}),
             }}
           >
-            正在读取你的人物特征…
+            {reading ? "正在读取你的人物特征…" : aiFeature ? "AI 看到的你" : "未读到特征(可直接继续)"}
           </div>
           <div
             style={{
@@ -319,29 +332,50 @@ function Capture() {
               margin: "0 auto 22px",
             }}
           >
-            {FEATURES.map((f) => (
+            {reading || !aiFeature ? (
+              FEATURES.map((f) => (
+                <div
+                  key={f.k}
+                  style={{
+                    padding: "8px 18px",
+                    border: "1px solid rgba(154,123,74,.5)",
+                    borderRadius: 30,
+                    background: "rgba(255,255,255,.4)",
+                    fontSize: 13,
+                    color: "#5a4630",
+                    letterSpacing: ".05em",
+                    animation: "lhFade .5s ease both",
+                  }}
+                >
+                  <span style={{ color: "#9a6b3a" }}>{f.k}</span> · {f.v}
+                </div>
+              ))
+            ) : (
               <div
-                key={f.k}
                 style={{
-                  padding: "8px 18px",
+                  padding: "12px 22px",
                   border: "1px solid rgba(154,123,74,.5)",
-                  borderRadius: 30,
-                  background: "rgba(255,255,255,.4)",
-                  fontSize: 13,
-                  color: "#5a4630",
-                  letterSpacing: ".05em",
+                  borderRadius: 12,
+                  background: "rgba(255,255,255,.55)",
+                  fontSize: 14,
+                  color: "#3a2c1c",
+                  letterSpacing: ".04em",
+                  lineHeight: 1.6,
+                  maxWidth: 560,
                   animation: "lhFade .5s ease both",
                 }}
               >
-                <span style={{ color: "#9a6b3a" }}>{f.k}</span> · {f.v}
+                {aiFeature}
               </div>
-            ))}
+            )}
           </div>
           <div style={{ display: "flex", gap: 16, justifyContent: "center" }}>
             <button
               onClick={() => {
                 setPhoto(null);
                 setCaptured(false);
+                setAiFeature("");
+                setReading(false);
               }}
               style={btnGhost}
             >

@@ -3,6 +3,7 @@ import { useState, type CSSProperties } from "react";
 import { Stage } from "@/components/Stage";
 import { YuanyangPot } from "@/components/hotpot-art";
 import { loadSession, saveSession } from "@/lib/session";
+import { getLLMKey, setLLMKey } from "@/lib/llm";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -182,6 +183,7 @@ function RitualTrack() {
 
 function Index() {
   const [nickname, setNickname] = useState(() => loadSession().nickname ?? "");
+  const [llmKey, setLlmKey] = useState(() => getLLMKey());
   return (
     <Stage>
       <CornerMarks />
@@ -232,8 +234,8 @@ function Index() {
 
       {/* CTA */}
       <div style={{ position: "absolute", left: 0, right: 0, bottom: 34, textAlign: "center" }}>
-        {/* 昵称:仅展示用,不进入人生故事生成 */}
-        <div style={{ marginBottom: 18 }}>
+        {/* 昵称 + 大模型 key:仅本机用,不进入人生故事生成逻辑 */}
+        <div style={{ marginBottom: 18, display: "flex", flexDirection: "column", gap: 10, alignItems: "center" }}>
           <input
             value={nickname}
             onChange={(e) => {
@@ -253,6 +255,30 @@ function Index() {
               fontFamily: serif,
               fontSize: 16,
               letterSpacing: ".08em",
+              textAlign: "center",
+              outline: "none",
+            }}
+          />
+          <input
+            type="password"
+            value={llmKey}
+            onChange={(e) => {
+              const v = e.target.value;
+              setLlmKey(v);
+              setLLMKey(v);
+            }}
+            placeholder="大模型 API Key（可选 · 仅存本机）"
+            autoComplete="off"
+            style={{
+              width: 320,
+              padding: "10px 16px",
+              borderRadius: 6,
+              border: "1.5px solid rgba(154,107,58,.5)",
+              background: "rgba(255,255,255,.55)",
+              color: "#2c2418",
+              fontFamily: serif,
+              fontSize: 14,
+              letterSpacing: ".04em",
               textAlign: "center",
               outline: "none",
             }}

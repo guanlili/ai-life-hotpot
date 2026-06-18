@@ -258,7 +258,29 @@ function Report() {
   const [storyLoading, setStoryLoading] = useState(false);
   const [storyError, setStoryError] = useState(false);
 
+  const [shareImage, setShareImage] = useState<string | null>(null);
+  const [generating, setGenerating] = useState(false);
+
   const parsed = useMemo(() => parseStory(story), [story]);
+
+  const handleSaveImage = async () => {
+    const shareNode = document.getElementById("share-card-template");
+    if (!shareNode) return;
+    setGenerating(true);
+    try {
+      const { toPng } = await import("html-to-image");
+      const dataUrl = await toPng(shareNode, {
+        cacheBust: true,
+        pixelRatio: 2,
+      });
+      setShareImage(dataUrl);
+    } catch (err) {
+      console.error("Failed to generate image", err);
+      alert("生成图片失败，请重试");
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   // isCancelled:由调用方(如 effect 清理)提供,用于在组件重渲染/卸载后丢弃过期结果,避免竞态覆盖。
   // 重试按钮等外部调用可不传,直接写入。
@@ -675,32 +697,56 @@ function Report() {
                 </div>
               )}
 
-              {/* 切换到背面的按钮 */}
-              <div
-                onClick={() => setIsFlipped(true)}
-                style={{
-                  alignSelf: "center",
-                  fontSize: 11,
-                  color: "#b4382b",
-                  border: "1px solid rgba(180,56,43,.4)",
-                  background: "rgba(180,56,43,.04)",
-                  borderRadius: 20,
-                  padding: "5px 14px",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                  marginTop: 18,
-                  userSelect: "none",
-                  fontWeight: 700,
-                  letterSpacing: ".06em",
-                  transition: "all 0.2s ease",
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(180,56,43,.08)")}
-                onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(180,56,43,.04)")}
-              >
-                <span>阅读详细命运故事</span>
-                <span style={{ fontSize: 10 }}>➔</span>
+              {/* 切换到背面的按钮 & 保存图片按钮 */}
+              <div style={{ display: "flex", gap: 10, alignSelf: "center", marginTop: 18 }}>
+                <div
+                  onClick={() => setIsFlipped(true)}
+                  style={{
+                    fontSize: 11,
+                    color: "#b4382b",
+                    border: "1px solid rgba(180,56,43,.4)",
+                    background: "rgba(180,56,43,.04)",
+                    borderRadius: 20,
+                    padding: "5px 14px",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    userSelect: "none",
+                    fontWeight: 700,
+                    letterSpacing: ".06em",
+                    transition: "all 0.2s ease",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(180,56,43,.08)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(180,56,43,.04)")}
+                >
+                  <span>命运故事</span>
+                  <span style={{ fontSize: 10 }}>➔</span>
+                </div>
+                <div
+                  onClick={handleSaveImage}
+                  style={{
+                    fontSize: 11,
+                    color: "#9a6b3a",
+                    border: "1px solid rgba(154,123,74,.4)",
+                    background: "rgba(154,123,74,.04)",
+                    borderRadius: 20,
+                    padding: "5px 14px",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    userSelect: "none",
+                    fontWeight: 700,
+                    letterSpacing: ".06em",
+                    transition: "all 0.2s ease",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(154,123,74,.08)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(154,123,74,.04)")}
+                >
+                  <span>保存报告到手机</span>
+                  <span style={{ fontSize: 11 }}>📷</span>
+                </div>
               </div>
 
               {/* 底部版权 */}
@@ -919,7 +965,7 @@ function Report() {
                     <div style={{ fontSize: 11, color: "#8a6a44", marginTop: 2, lineHeight: 1.4 }}>
                       {isPortrait ? "永久链接 · 多端可看" : "公网链接 · 手机可看"}
                     </div>
-                    <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                    <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
                       <div
                         onClick={() => setIsFlipped(false)}
                         style={{
@@ -936,6 +982,27 @@ function Report() {
                         }}
                       >
                         返回正页
+                      </div>
+                      <div
+                        onClick={handleSaveImage}
+                        style={{
+                          border: "1.5px solid #e2a855",
+                          padding: "5px 12px",
+                          borderRadius: 6,
+                          background: "rgba(226,168,85,.08)",
+                          color: "#7a5a2a",
+                          fontFamily: serif,
+                          fontWeight: 700,
+                          fontSize: 12,
+                          cursor: "pointer",
+                          userSelect: "none",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 4,
+                        }}
+                      >
+                        <span>保存到手机</span>
+                        <span style={{ fontSize: 11 }}>📷</span>
                       </div>
                       <Link
                         to="/"
@@ -983,6 +1050,463 @@ function Report() {
           </div>
         </div>
       </div>
+
+      {/* Off-screen Share Card Template */}
+      <div
+        id="share-card-template"
+        style={{
+          position: "fixed",
+          left: -9999,
+          top: -9999,
+          width: 460,
+          background: "linear-gradient(180deg,#f7f0df,#efe5cd)",
+          padding: "36px 36px 40px 36px",
+          color: "#2c2418",
+          display: "flex",
+          flexDirection: "column",
+          fontFamily: "'Noto Sans SC',system-ui,sans-serif",
+          boxSizing: "border-box",
+        }}
+      >
+        {/* Paper texture overlay */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            backgroundImage: "radial-gradient(rgba(120,95,60,.05) 1px,transparent 1.5px)",
+            backgroundSize: "7px 7px",
+            pointerEvents: "none",
+          }}
+        />
+
+        {/* Header */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            position: "relative",
+          }}
+        >
+          <div>
+            {summary.nickname && (
+              <div style={{ fontSize: 12, color: "#9a6b3a", letterSpacing: ".1em", marginBottom: 5 }}>
+                致 「{summary.nickname}」
+              </div>
+            )}
+            <div
+              style={{ fontFamily: serif, fontWeight: 900, fontSize: 24, letterSpacing: ".12em" }}
+            >
+              人生火锅报告
+            </div>
+            <div style={{ fontSize: 10, letterSpacing: ".4em", color: "#9a6b3a", marginTop: 3 }}>
+              LIFE HOTPOT REPORT
+            </div>
+          </div>
+          <div
+            style={{
+              width: 46,
+              height: 46,
+              borderRadius: 7,
+              background: "#b4382b",
+              color: "#f4eddd",
+              fontFamily: serif,
+              fontWeight: 700,
+              fontSize: 13,
+              lineHeight: 1.1,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center",
+              boxShadow: "0 3px 8px rgba(150,40,30,.4)",
+            }}
+          >
+            人生
+            <br />
+            之味
+          </div>
+        </div>
+        <div
+          style={{
+            height: 1,
+            margin: "16px 0",
+            background: "linear-gradient(90deg,#b4382b,transparent)",
+          }}
+        />
+
+        {/* Destiny Flavor */}
+        <div style={{ fontSize: 11, letterSpacing: ".3em", color: "#9a6b3a", position: "relative" }}>
+          命 运 口 味
+        </div>
+        <div
+          style={{
+            fontFamily: serif,
+            fontWeight: 900,
+            fontSize: 26,
+            lineHeight: 1.35,
+            marginTop: 6,
+            color: "#7a2418",
+            position: "relative",
+          }}
+        >
+          {report.flavor}
+        </div>
+
+        {/* Three chips */}
+        <div style={{ display: "flex", gap: 8, marginTop: 18, position: "relative" }}>
+          <div style={chipStyle}>
+            <div style={{ fontSize: 9, color: "#9a6b3a", letterSpacing: ".2em" }}>人生锅底</div>
+            <div style={{ fontFamily: serif, fontWeight: 700, fontSize: 13, marginTop: 3 }}>
+              {report.baseName}
+            </div>
+          </div>
+          <div style={chipStyle}>
+            <div style={{ fontSize: 9, color: "#9a6b3a", letterSpacing: ".2em" }}>核心食材</div>
+            <div style={{ fontFamily: serif, fontWeight: 700, fontSize: 13, marginTop: 3 }}>
+              {report.coreIng}
+            </div>
+          </div>
+          <div style={chipStyle}>
+            <div style={{ fontSize: 9, color: "#9a6b3a", letterSpacing: ".2em" }}>灵魂蘸料</div>
+            <div style={{ fontFamily: serif, fontWeight: 700, fontSize: 13, marginTop: 3 }}>
+              {report.soulSauce}
+            </div>
+          </div>
+        </div>
+
+        {/* 100 coins chart */}
+        <div
+          style={{
+            fontSize: 11,
+            letterSpacing: ".3em",
+            color: "#9a6b3a",
+            marginTop: 18,
+            position: "relative",
+          }}
+        >
+          一 百 金 币 · 人 生 分 配
+        </div>
+        <div
+          style={{
+            marginTop: 10,
+            display: "flex",
+            flexDirection: "column",
+            gap: 7,
+            position: "relative",
+          }}
+        >
+          {report.coins.map((c) => (
+            <div key={c.key} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ width: 38, fontFamily: serif, fontSize: 13, color: "#3a2c1c" }}>
+                {c.name}
+              </div>
+              <div
+                style={{
+                  flex: 1,
+                  height: 13,
+                  borderRadius: 7,
+                  background: "#ddd0b3",
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  style={{
+                    width: `${c.val}%`,
+                    height: "100%",
+                    background: c.color,
+                    borderRadius: 7,
+                  }}
+                />
+              </div>
+              <div
+                style={{
+                  width: 30,
+                  textAlign: "right",
+                  fontFamily: serif,
+                  fontWeight: 700,
+                  fontSize: 14,
+                  color: "#2c2418",
+                }}
+              >
+                {c.val}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Slogan */}
+        {parsed.title && (
+          <div
+            style={{
+              fontFamily: serif,
+              fontWeight: 900,
+              fontSize: 22,
+              lineHeight: 1.3,
+              color: "#7a2418",
+              position: "relative",
+              marginTop: 20,
+            }}
+          >
+            {parsed.title}
+          </div>
+        )}
+        {parsed.slogan && (
+          <div
+            style={{
+              fontFamily: serif,
+              fontSize: 14,
+              lineHeight: 1.5,
+              color: "#5a4630",
+              marginTop: 8,
+              position: "relative",
+            }}
+          >
+            {parsed.slogan}
+          </div>
+        )}
+
+        <div
+          style={{
+            height: 1,
+            borderTop: "1.5px dashed rgba(154,123,74,.3)",
+            margin: "20px 0 16px 0",
+            position: "relative",
+          }}
+        />
+
+        {/* Narrative Story */}
+        <div style={{ fontSize: 11, letterSpacing: ".3em", color: "#9a6b3a", position: "relative", marginBottom: 8 }}>
+          命 运 故 事
+        </div>
+        <div
+          style={{
+            fontFamily: serif,
+            fontSize: 13,
+            lineHeight: 1.65,
+            color: "#3a2c1c",
+            position: "relative",
+            marginBottom: 20,
+          }}
+        >
+          <RichText text={parsed.narrative || story} />
+        </div>
+
+        {/* AI observer comment */}
+        {parsed.observer && (
+          <div
+            style={{
+              position: "relative",
+              background: "rgba(154,123,74,.05)",
+              border: "1px solid rgba(154,123,74,.18)",
+              borderRadius: 8,
+              padding: "14px 18px",
+              boxShadow: "0 4px 12px rgba(60,40,20,.02)",
+              marginBottom: 24,
+            }}
+          >
+            <span
+              style={{
+                position: "absolute",
+                left: 12,
+                top: -8,
+                fontFamily: serif,
+                fontSize: 36,
+                color: "#9a6b3a",
+                opacity: 0.18,
+                lineHeight: 1,
+              }}
+            >
+              “
+            </span>
+            <div
+              style={{
+                fontSize: 10,
+                letterSpacing: ".24em",
+                color: "#9a6b3a",
+                marginBottom: 6,
+                fontWeight: 600,
+              }}
+            >
+              A I  观  察  员  评  价
+            </div>
+            <div
+              style={{
+                fontFamily: serif,
+                fontSize: 12.4,
+                lineHeight: 1.65,
+                color: "#3a2c1c",
+                position: "relative",
+                zIndex: 1,
+              }}
+            >
+              <RichText text={parsed.observer} />
+            </div>
+          </div>
+        )}
+
+        {/* Footer (QR code + branding) */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 16,
+            paddingTop: 16,
+            borderTop: "1px solid rgba(154,123,74,.25)",
+            position: "relative",
+          }}
+        >
+          <div
+            style={{
+              width: 64,
+              height: 64,
+              background: "#fff",
+              borderRadius: 6,
+              padding: 4,
+              boxShadow: "inset 0 0 0 1px rgba(0,0,0,.06)",
+              flexShrink: 0,
+            }}
+          >
+            {qr ? (
+              <img src={qr} alt="二维码" style={{ width: "100%", height: "100%" }} />
+            ) : (
+              <div style={{ width: "100%", height: "100%", background: "#eee" }} />
+            )}
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: serif, fontWeight: 700, fontSize: 13, color: "#2c2418" }}>
+              扫码煮一锅自己的人生火锅
+            </div>
+            <div style={{ fontSize: 10, color: "#8a6a44", marginTop: 2, lineHeight: 1.4 }}>
+              AI 人生火锅 · #你这一锅什么味
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Share Image Preview Overlay */}
+      {shareImage && (
+        <div
+          onClick={() => setShareImage(null)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.88)",
+            backdropFilter: "blur(10px)",
+            WebkitBackdropFilter: "blur(10px)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 10000,
+            padding: "20px",
+            boxSizing: "border-box",
+          }}
+        >
+          <div
+            onClick={() => setShareImage(null)}
+            style={{
+              position: "absolute",
+              right: 20,
+              top: 20,
+              width: 36,
+              height: 36,
+              borderRadius: "50%",
+              background: "rgba(255,255,255,0.15)",
+              color: "#fff",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 18,
+              cursor: "pointer",
+              zIndex: 10,
+            }}
+          >
+            ✕
+          </div>
+          <div
+            style={{
+              width: "100%",
+              maxWidth: 420,
+              height: "calc(100vh - 120px)",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={shareImage}
+              alt="分享卡片"
+              style={{
+                maxWidth: "100%",
+                maxHeight: "calc(100% - 40px)",
+                borderRadius: 12,
+                boxShadow: "0 20px 50px rgba(0,0,0,0.5)",
+                border: "2px solid rgba(255,255,255,0.1)",
+                display: "block",
+              }}
+            />
+            <div
+              style={{
+                marginTop: 15,
+                color: "#ffd46a",
+                fontSize: 13,
+                fontWeight: 700,
+                letterSpacing: ".08em",
+                textAlign: "center",
+                textShadow: "0 2px 4px rgba(0,0,0,0.5)",
+              }}
+            >
+              👆 长按图片保存到手机相册
+            </div>
+            <div
+              style={{
+                marginTop: 4,
+                color: "rgba(255,255,255,0.5)",
+                fontSize: 10,
+                textAlign: "center",
+              }}
+            >
+              分享给朋友，测测他们的人生口味
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Image Generating Spinner Overlay */}
+      {generating && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.6)",
+            backdropFilter: "blur(4px)",
+            WebkitBackdropFilter: "blur(4px)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 10000,
+            color: "#fff",
+          }}
+        >
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              border: "3px solid rgba(255,255,255,0.2)",
+              borderTopColor: "#ffd46a",
+              borderRadius: "50%",
+              animation: "lhSpin .8s linear infinite",
+              marginBottom: 16,
+            }}
+          />
+          <div style={{ fontSize: 14, fontFamily: serif, color: "#f4eddd", letterSpacing: ".1em" }}>
+            正在精心烘焙人生报告图片...
+          </div>
+        </div>
+      )}
     </Stage>
   );
 }

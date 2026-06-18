@@ -14,6 +14,7 @@ import { useEffect, useRef, useState } from "react";
 import { useHandGesture, type GestureState } from "@/hooks/useHandGesture";
 import type { GestureFood } from "@/hooks/useGestureGame";
 import { FoodGlyph } from "@/components/hotpot-art";
+import { useIsPortrait } from "@/hooks/use-mobile";
 
 interface GestureGameLayerProps {
   enabled: boolean;
@@ -34,8 +35,6 @@ interface GestureGameLayerProps {
 
 const GAME_W = 1280;
 const GAME_H = 720;
-const CAM_W = 320;
-const CAM_H = 240;
 const CURSOR_SIZE = 40;
 
 export function GestureGameLayer({
@@ -48,6 +47,10 @@ export function GestureGameLayer({
   showGuide,
   onCloseGuide,
 }: GestureGameLayerProps) {
+  const isPortrait = useIsPortrait();
+  const camW = isPortrait ? 120 : 320;
+  const camH = isPortrait ? 90 : 240;
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [camReady, setCamReady] = useState(false);
@@ -105,25 +108,25 @@ export function GestureGameLayer({
     const video = videoRef.current;
     const canvas = canvasRef.current;
     if (!video || !canvas) return;
-    if (canvas.width !== CAM_W) canvas.width = CAM_W;
-    if (canvas.height !== CAM_H) canvas.height = CAM_H;
+    if (canvas.width !== camW) canvas.width = camW;
+    if (canvas.height !== camH) canvas.height = camH;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     let raf = 0;
     const draw = () => {
       if (video.readyState >= 2) {
-        ctx.clearRect(0, 0, CAM_W, CAM_H);
+        ctx.clearRect(0, 0, camW, camH);
         ctx.save();
         ctx.scale(-1, 1);
-        ctx.drawImage(video, -CAM_W, 0, CAM_W, CAM_H);
+        ctx.drawImage(video, -camW, 0, camW, camH);
         ctx.restore();
       }
       raf = requestAnimationFrame(draw);
     };
     raf = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(raf);
-  }, [enabled, camReady]);
+  }, [enabled, camReady, camW, camH]);
 
   if (!enabled) return null;
 
@@ -198,16 +201,16 @@ export function GestureGameLayer({
           opacity: 0,
           pointerEvents: "none",
         }}
-        width={CAM_W}
-        height={CAM_H}
+        width={camW}
+        height={camH}
       />
 
       {/* 摄像头预览面板 — 可折叠 */}
       <div
         style={{
           position: "absolute",
-          right: 20,
-          bottom: 20,
+          right: isPortrait ? 16 : 20,
+          bottom: isPortrait ? 130 : 20,
           zIndex: 150,
         }}
       >
@@ -264,8 +267,8 @@ export function GestureGameLayer({
             {camError ? (
               <div
                 style={{
-                  width: CAM_W,
-                  height: CAM_H,
+                  width: camW,
+                  height: camH,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -282,8 +285,8 @@ export function GestureGameLayer({
               <PreviewCanvas
                 video={videoRef.current}
                 ready={camReady}
-                width={CAM_W}
-                height={CAM_H}
+                width={camW}
+                height={camH}
               />
             )}
             <div

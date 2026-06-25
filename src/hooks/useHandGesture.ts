@@ -10,7 +10,9 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { FilesetResolver, HandLandmarker } from "@mediapipe/tasks-vision";
+// 仅类型引用（会被擦除，不进 bundle）；运行时的 FilesetResolver/HandLandmarker
+// 在 enabled 时动态 import，避免 @mediapipe/tasks-vision 进入 play 页首屏。
+import type { HandLandmarker } from "@mediapipe/tasks-vision";
 
 export type GestureState = "open" | "fist" | "trans" | "none";
 
@@ -43,6 +45,7 @@ export function useHandGesture({ video, enabled, onSample }: UseHandGestureOpts)
     let mounted = true;
     (async () => {
       try {
+        const { FilesetResolver, HandLandmarker } = await import("@mediapipe/tasks-vision");
         const vision = await FilesetResolver.forVisionTasks(
           "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm",
         );

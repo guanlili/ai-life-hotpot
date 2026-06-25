@@ -57,11 +57,25 @@ const btnGhost: CSSProperties = {
 };
 
 function Bracket({ pos, isPortrait }: { pos: "tl" | "tr" | "bl" | "br"; isPortrait?: boolean }) {
-  const base: CSSProperties = { position: "absolute", width: isPortrait ? 20 : 30, height: isPortrait ? 20 : 30 };
+  const base: CSSProperties = {
+    position: "absolute",
+    width: isPortrait ? 20 : 30,
+    height: isPortrait ? 20 : 30,
+  };
   const offset = isPortrait ? 24 : 40;
   const map: Record<string, CSSProperties> = {
-    tl: { left: offset, top: offset, borderLeft: "2px solid #d9c79a", borderTop: "2px solid #d9c79a" },
-    tr: { right: offset, top: offset, borderRight: "2px solid #d9c79a", borderTop: "2px solid #d9c79a" },
+    tl: {
+      left: offset,
+      top: offset,
+      borderLeft: "2px solid #d9c79a",
+      borderTop: "2px solid #d9c79a",
+    },
+    tr: {
+      right: offset,
+      top: offset,
+      borderRight: "2px solid #d9c79a",
+      borderTop: "2px solid #d9c79a",
+    },
     bl: {
       left: offset,
       bottom: offset,
@@ -77,7 +91,6 @@ function Bracket({ pos, isPortrait }: { pos: "tl" | "tr" | "bl" | "br"; isPortra
   };
   return <div style={{ ...base, ...map[pos] }} />;
 }
-
 
 function Capture() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -119,9 +132,12 @@ function Capture() {
 
   useEffect(() => () => stream?.getTracks().forEach((t) => t.stop()), [stream]);
 
-  useEffect(() => () => {
-    abortedRef.current = true;
-  }, []);
+  useEffect(
+    () => () => {
+      abortedRef.current = true;
+    },
+    [],
+  );
 
   const snap = () => {
     const v = videoRef.current;
@@ -170,32 +186,42 @@ function Capture() {
 
   const renderContent = () => {
     const frameSize = isPortrait ? 260 : 360;
-    
+
     return (
-      <div style={isPortrait ? {
-        display: "flex",
-        flexDirection: "column",
-        minHeight: "100%",
-        padding: "24px 20px 80px",
-        alignItems: "center",
-        justifyContent: "space-between",
-        boxSizing: "border-box",
-        position: "relative",
-      } : undefined}>
+      <div
+        style={
+          isPortrait
+            ? {
+                display: "flex",
+                flexDirection: "column",
+                minHeight: "100%",
+                padding: "24px 20px 80px",
+                alignItems: "center",
+                justifyContent: "space-between",
+                boxSizing: "border-box",
+                position: "relative",
+              }
+            : undefined
+        }
+      >
         {/* 标题 */}
         <div
-          style={isPortrait ? {
-            textAlign: "center",
-            marginTop: 10,
-            animation: "lhFade .5s ease both",
-          } : {
-            position: "absolute",
-            top: 50,
-            left: 0,
-            right: 0,
-            textAlign: "center",
-            animation: "lhFade .5s ease both",
-          }}
+          style={
+            isPortrait
+              ? {
+                  textAlign: "center",
+                  marginTop: 10,
+                  animation: "lhFade .5s ease both",
+                }
+              : {
+                  position: "absolute",
+                  top: 50,
+                  left: 0,
+                  right: 0,
+                  textAlign: "center",
+                  animation: "lhFade .5s ease both",
+                }
+          }
         >
           <div
             style={{
@@ -208,7 +234,14 @@ function Capture() {
           >
             AI 人生火锅
           </div>
-          <div style={{ fontSize: isPortrait ? 11 : 13, letterSpacing: ".5em", color: "#9a6b3a", marginTop: 6 }}>
+          <div
+            style={{
+              fontSize: isPortrait ? 11 : 13,
+              letterSpacing: ".5em",
+              color: "#9a6b3a",
+              marginTop: 6,
+            }}
+          >
             你 的 人 生 · 由 你 来 涮
           </div>
           <div
@@ -223,29 +256,33 @@ function Capture() {
 
         {/* 取景框 */}
         <div
-          style={isPortrait ? {
-            position: "relative",
-            width: frameSize,
-            height: frameSize,
-            borderRadius: "50%",
-            background: "radial-gradient(circle at 50% 38%,#2a2218,#171009)",
-            boxShadow:
-              "0 16px 40px rgba(0,0,0,.4), inset 0 0 0 8px rgba(154,123,74,.4), inset 0 0 30px rgba(0,0,0,.6)",
-            overflow: "hidden",
-            margin: "24px auto",
-          } : {
-            position: "absolute",
-            left: 640,
-            top: 360,
-            transform: "translate(-50%,-50%)",
-            width: 360,
-            height: 360,
-            borderRadius: "50%",
-            background: "radial-gradient(circle at 50% 38%,#2a2218,#171009)",
-            boxShadow:
-              "0 24px 60px rgba(0,0,0,.4), inset 0 0 0 10px rgba(154,123,74,.4), inset 0 0 40px rgba(0,0,0,.6)",
-            overflow: "hidden",
-          }}
+          style={
+            isPortrait
+              ? {
+                  position: "relative",
+                  width: frameSize,
+                  height: frameSize,
+                  borderRadius: "50%",
+                  background: "radial-gradient(circle at 50% 38%,#2a2218,#171009)",
+                  boxShadow:
+                    "0 16px 40px rgba(0,0,0,.4), inset 0 0 0 8px rgba(154,123,74,.4), inset 0 0 30px rgba(0,0,0,.6)",
+                  overflow: "hidden",
+                  margin: "24px auto",
+                }
+              : {
+                  position: "absolute",
+                  left: 640,
+                  top: 360,
+                  transform: "translate(-50%,-50%)",
+                  width: 360,
+                  height: 360,
+                  borderRadius: "50%",
+                  background: "radial-gradient(circle at 50% 38%,#2a2218,#171009)",
+                  boxShadow:
+                    "0 24px 60px rgba(0,0,0,.4), inset 0 0 0 10px rgba(154,123,74,.4), inset 0 0 40px rgba(0,0,0,.6)",
+                  overflow: "hidden",
+                }
+          }
         >
           {/* 真实摄像头 / 照片 */}
           {photo ? (
@@ -300,10 +337,24 @@ function Capture() {
               >
                 AI 将读取你的气质特征
               </div>
-              <div style={{ fontSize: isPortrait ? 10 : 12, lineHeight: 1.6, color: "#d9c79a", maxWidth: 220 }}>
+              <div
+                style={{
+                  fontSize: isPortrait ? 10 : 12,
+                  lineHeight: 1.6,
+                  color: "#d9c79a",
+                  maxWidth: 220,
+                }}
+              >
                 仅用于本次体验的人物特征参考，不做身份识别，不长期保存。
               </div>
-              <button onClick={() => setRequested(true)} style={{ ...btn, padding: isPortrait ? "10px 30px" : "14px 50px", fontSize: isPortrait ? 16 : 20 }}>
+              <button
+                onClick={() => setRequested(true)}
+                style={{
+                  ...btn,
+                  padding: isPortrait ? "10px 30px" : "14px 50px",
+                  fontSize: isPortrait ? 16 : 20,
+                }}
+              >
                 允许摄像头
               </button>
             </div>
@@ -362,41 +413,59 @@ function Capture() {
         {/* 拍照前 / 读取特征 */}
         {!captured ? (
           <div
-            style={isPortrait ? {
-              width: "100%",
-              textAlign: "center",
-              animation: "lhFade .5s ease both",
-              marginTop: 10,
-            } : {
-              position: "absolute",
-              left: 0,
-              right: 0,
-              bottom: 96,
-              textAlign: "center",
-              animation: "lhFade .5s ease both",
-            }}
+            style={
+              isPortrait
+                ? {
+                    width: "100%",
+                    textAlign: "center",
+                    animation: "lhFade .5s ease both",
+                    marginTop: 10,
+                  }
+                : {
+                    position: "absolute",
+                    left: 0,
+                    right: 0,
+                    bottom: 96,
+                    textAlign: "center",
+                    animation: "lhFade .5s ease both",
+                  }
+            }
           >
-            <div style={{ fontFamily: serif, fontSize: isPortrait ? 15 : 18, color: "#5a4630", marginBottom: 16 }}>
+            <div
+              style={{
+                fontFamily: serif,
+                fontSize: isPortrait ? 15 : 18,
+                color: "#5a4630",
+                marginBottom: 16,
+              }}
+            >
               请站在镜头前 · 我们先为你留一张影
             </div>
             <div style={{ display: "flex", gap: 16, justifyContent: "center" }}>
-              <button onClick={skip} style={isPortrait ? { ...btnGhost, padding: "10px 30px", fontSize: 16 } : btnGhost}>
+              <button
+                onClick={skip}
+                style={isPortrait ? { ...btnGhost, padding: "10px 30px", fontSize: 16 } : btnGhost}
+              >
                 跳 过
               </button>
               <button
                 onClick={snap}
                 disabled={!stream}
-                style={isPortrait ? {
-                  ...btn,
-                  padding: "10px 30px",
-                  fontSize: 16,
-                  opacity: stream ? 1 : 0.5,
-                  cursor: stream ? "pointer" : "allowed",
-                } : {
-                  ...btn,
-                  opacity: stream ? 1 : 0.5,
-                  cursor: stream ? "pointer" : "not-allowed",
-                }}
+                style={
+                  isPortrait
+                    ? {
+                        ...btn,
+                        padding: "10px 30px",
+                        fontSize: 16,
+                        opacity: stream ? 1 : 0.5,
+                        cursor: stream ? "pointer" : "allowed",
+                      }
+                    : {
+                        ...btn,
+                        opacity: stream ? 1 : 0.5,
+                        cursor: stream ? "pointer" : "not-allowed",
+                      }
+                }
               >
                 拍 照
               </button>
@@ -404,19 +473,23 @@ function Capture() {
           </div>
         ) : (
           <div
-            style={isPortrait ? {
-              width: "100%",
-              textAlign: "center",
-              animation: "lhFade .5s ease both",
-              marginTop: 10,
-            } : {
-              position: "absolute",
-              left: 0,
-              right: 0,
-              bottom: 70,
-              textAlign: "center",
-              animation: "lhFade .5s ease both",
-            }}
+            style={
+              isPortrait
+                ? {
+                    width: "100%",
+                    textAlign: "center",
+                    animation: "lhFade .5s ease both",
+                    marginTop: 10,
+                  }
+                : {
+                    position: "absolute",
+                    left: 0,
+                    right: 0,
+                    bottom: 70,
+                    textAlign: "center",
+                    animation: "lhFade .5s ease both",
+                  }
+            }
           >
             <div
               style={{
@@ -451,7 +524,9 @@ function Capture() {
                     fontSize: isPortrait ? 11 : 13,
                     color: "#5a4630",
                     letterSpacing: ".05em",
-                    animation: reading ? "lhPulse 1.4s ease-in-out infinite" : "lhFade .5s ease both",
+                    animation: reading
+                      ? "lhPulse 1.4s ease-in-out infinite"
+                      : "lhFade .5s ease both",
                     opacity: reading || !f.v ? 0.8 : 1,
                   }}
                 >
@@ -471,7 +546,10 @@ function Capture() {
               >
                 重 拍
               </button>
-              <button onClick={next} style={isPortrait ? { ...btn, padding: "10px 30px", fontSize: 16 } : btn}>
+              <button
+                onClick={next}
+                style={isPortrait ? { ...btn, padding: "10px 30px", fontSize: 16 } : btn}
+              >
                 下一步 →
               </button>
             </div>
@@ -479,23 +557,27 @@ function Capture() {
         )}
 
         <div
-          style={isPortrait ? {
-            textAlign: "center",
-            fontSize: 10,
-            color: "#9a8763",
-            letterSpacing: ".04em",
-            marginTop: 20,
-            padding: "0 10px",
-          } : {
-            position: "absolute",
-            left: 0,
-            right: 0,
-            bottom: 22,
-            textAlign: "center",
-            fontSize: 11,
-            color: "#9a8763",
-            letterSpacing: ".04em",
-          }}
+          style={
+            isPortrait
+              ? {
+                  textAlign: "center",
+                  fontSize: 10,
+                  color: "#9a8763",
+                  letterSpacing: ".04em",
+                  marginTop: 20,
+                  padding: "0 10px",
+                }
+              : {
+                  position: "absolute",
+                  left: 0,
+                  right: 0,
+                  bottom: 22,
+                  textAlign: "center",
+                  fontSize: 11,
+                  color: "#9a8763",
+                  letterSpacing: ".04em",
+                }
+          }
         >
           照片仅用于本次体验的人物特征参考 · 不做身份识别 · 不做长期保存
         </div>

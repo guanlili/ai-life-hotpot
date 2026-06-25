@@ -15,8 +15,3 @@ export function saveSession(s: Partial<SelectionSummary>) {
   if (typeof window === "undefined") return;
   sessionStorage.setItem(KEY, JSON.stringify(s));
 }
-
-export function clearSession() {
-  if (typeof window === "undefined") return;
-  sessionStorage.removeItem(KEY);
-}

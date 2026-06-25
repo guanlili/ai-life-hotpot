@@ -24,6 +24,27 @@
 
 报告地址（`/report/<编码>`）是公网可访问链接，AI 故事**烤在链接里**，别人扫码 / 点开**无需 key** 直接看。
 
+---
+
+## 界面预览
+
+### 1. 首页与拍照
+| 首页 (填昵称) | 拍照 (气质识别) |
+| :---: | :---: |
+| <img src="public/前端截图/首页.png" width="360" alt="首页" /> | <img src="public/前端截图/拍照页.png" width="360" alt="拍照页" /> |
+
+### 2. 火锅配置流程
+| 选择锅底 | 挑选食材 | 调制蘸料 |
+| :---: | :---: | :---: |
+| <img src="public/前端截图/选择锅底.png" width="240" alt="选择锅底" /> | <img src="public/前端截图/选食材.png" width="240" alt="选食材" /> | <img src="public/前端截图/调蘸料.png" width="240" alt="调蘸料" /> |
+
+### 3. 生成报告与命运故事
+| 人生火锅报告 | 命运故事 (展开) |
+| :---: | :---: |
+| <img src="public/前端截图/火锅报告.png" width="360" alt="火锅报告" /> | <img src="public/前端截图/命运故事.png" width="360" alt="命运故事" /> |
+
+---
+
 ## 技术栈
 
 - **框架**：TanStack Start（SSR）+ React 19 + TanStack Router

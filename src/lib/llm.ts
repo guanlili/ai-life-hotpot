@@ -118,19 +118,18 @@ async function chatStream(
  * 生成人生故事(deepseek-v4-pro)。基于选择摘要 + 可选的人物特征。
  * 成功返回故事正文,失败/无 key 返回 ""(调用方回落模板)。
  */
-export async function generateStory(summary: SelectionSummary, photoFeatures?: string): Promise<string> {
+export async function generateStory(
+  summary: SelectionSummary,
+  photoFeatures?: string,
+): Promise<string> {
   const rep = buildReport(summary);
-  const coinMap: Record<string, number> = Object.fromEntries(
-    rep.coins.map((c) => [c.key, c.val]),
-  );
+  const coinMap: Record<string, number> = Object.fromEntries(rep.coins.map((c) => [c.key, c.val]));
   const pickOrder = summary.picks
     .map((p) => itemById(p.id)?.name)
     .filter(Boolean)
     .slice(0, 6)
     .join(" → ");
-  const face =
-    photoFeatures?.trim() ||
-    "（本次未拍摄照片，请仅依据命运分配与火锅选择推演）";
+  const face = photoFeatures?.trim() || "（本次未拍摄照片，请仅依据命运分配与火锅选择推演）";
 
   const system = `你是一位观察了无数人生轨迹的 AI 命运分析师。
 

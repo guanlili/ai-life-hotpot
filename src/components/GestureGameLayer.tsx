@@ -155,7 +155,7 @@ export function GestureGameLayer({
               filter: f.grabbed ? "drop-shadow(0 0 8px rgba(255,200,0,0.8))" : "none",
             }}
           >
-            <FoodGlyph food={f.food as any} kind={f.kind} />
+            <FoodGlyph name={f.food} />
           </div>
           {f.grabbed && (
             <div
@@ -282,12 +282,7 @@ export function GestureGameLayer({
                 {camError}
               </div>
             ) : (
-              <PreviewCanvas
-                video={videoRef.current}
-                ready={camReady}
-                width={camW}
-                height={camH}
-              />
+              <PreviewCanvas video={videoRef.current} ready={camReady} width={camW} height={camH} />
             )}
             <div
               style={{
@@ -450,10 +445,7 @@ function PreviewCanvas({
         overflow: "hidden",
       }}
     >
-      <canvas
-        ref={canvasRef}
-        style={{ width, height, borderRadius: 8, display: "block" }}
-      />
+      <canvas ref={canvasRef} style={{ width, height, borderRadius: 8, display: "block" }} />
       {!ready && (
         <div
           style={{

@@ -69,21 +69,68 @@ function Seal({ text, style }: { text: string; style?: CSSProperties }) {
 
 // 四角内框装饰
 function CornerMarks() {
-  const base: CSSProperties = { position: "absolute", width: 30, height: 30, pointerEvents: "none" };
+  const base: CSSProperties = {
+    position: "absolute",
+    width: 30,
+    height: 30,
+    pointerEvents: "none",
+  };
   const c = "rgba(154,107,58,.45)";
   return (
     <>
-      <div style={{ ...base, top: 30, left: 30, borderTop: `2px solid ${c}`, borderLeft: `2px solid ${c}` }} />
-      <div style={{ ...base, top: 30, right: 30, borderTop: `2px solid ${c}`, borderRight: `2px solid ${c}` }} />
-      <div style={{ ...base, bottom: 30, left: 30, borderBottom: `2px solid ${c}`, borderLeft: `2px solid ${c}` }} />
-      <div style={{ ...base, bottom: 30, right: 30, borderBottom: `2px solid ${c}`, borderRight: `2px solid ${c}` }} />
+      <div
+        style={{
+          ...base,
+          top: 30,
+          left: 30,
+          borderTop: `2px solid ${c}`,
+          borderLeft: `2px solid ${c}`,
+        }}
+      />
+      <div
+        style={{
+          ...base,
+          top: 30,
+          right: 30,
+          borderTop: `2px solid ${c}`,
+          borderRight: `2px solid ${c}`,
+        }}
+      />
+      <div
+        style={{
+          ...base,
+          bottom: 30,
+          left: 30,
+          borderBottom: `2px solid ${c}`,
+          borderLeft: `2px solid ${c}`,
+        }}
+      />
+      <div
+        style={{
+          ...base,
+          bottom: 30,
+          right: 30,
+          borderBottom: `2px solid ${c}`,
+          borderRight: `2px solid ${c}`,
+        }}
+      />
     </>
   );
 }
 
 function Steam() {
   return (
-    <div style={{ position: "absolute", left: "50%", top: -12, transform: "translateX(-50%)", display: "flex", gap: 12, pointerEvents: "none" }}>
+    <div
+      style={{
+        position: "absolute",
+        left: "50%",
+        top: -12,
+        transform: "translateX(-50%)",
+        display: "flex",
+        gap: 12,
+        pointerEvents: "none",
+      }}
+    >
       {[0, 1, 2, 3].map((i) => (
         <span
           key={i}
@@ -227,7 +274,8 @@ function RitualTrackMobile() {
               margin: "0 auto",
               background: i === 0 ? "#b4382b" : "rgba(244,237,221,.74)",
               border: "1px solid rgba(154,107,58,.42)",
-              boxShadow: i === 0 ? "0 0 0 5px rgba(180,56,43,.08)" : "0 4px 10px rgba(90,70,40,.06)",
+              boxShadow:
+                i === 0 ? "0 0 0 5px rgba(180,56,43,.08)" : "0 4px 10px rgba(90,70,40,.06)",
               display: "grid",
               placeItems: "center",
               color: i === 0 ? "#f4eddd" : "#9a6b3a",
@@ -279,26 +327,50 @@ function Index() {
           }}
         >
           {/* Header */}
-          <div style={{ display: "flex", width: "100%", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+          <div
+            style={{
+              display: "flex",
+              width: "100%",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              marginBottom: 10,
+            }}
+          >
             <div style={{ textAlign: "left" }}>
-              <div style={{ fontSize: 11, letterSpacing: ".3em", color: "#9a6b3a" }}>A I  ·  L I F E  H O T P O T</div>
-              <div style={{ fontFamily: serif, fontWeight: 900, fontSize: 32, letterSpacing: ".1em", color: "#2c2418", marginTop: 6 }}>
+              <div style={{ fontSize: 11, letterSpacing: ".3em", color: "#9a6b3a" }}>
+                A I · L I F E H O T P O T
+              </div>
+              <div
+                style={{
+                  fontFamily: serif,
+                  fontWeight: 900,
+                  fontSize: 32,
+                  letterSpacing: ".1em",
+                  color: "#2c2418",
+                  marginTop: 6,
+                }}
+              >
                 人生火锅
               </div>
             </div>
-            <Seal text="人生之味" style={{ transform: "rotate(-6deg) scale(0.85)", transformOrigin: "top right" }} />
+            <Seal
+              text="人生之味"
+              style={{ transform: "rotate(-6deg) scale(0.85)", transformOrigin: "top right" }}
+            />
           </div>
 
           {/* Yuanyang Pot (Centered) */}
-          <div style={{
-            position: "relative",
-            width: 180,
-            height: 180,
-            margin: "20px auto",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center"
-          }}>
+          <div
+            style={{
+              position: "relative",
+              width: 180,
+              height: 180,
+              margin: "20px auto",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
             <Steam />
             <div
               style={{
@@ -316,14 +388,16 @@ function Index() {
           <RitualTrackMobile />
 
           {/* Footer Form & CTA */}
-          <div style={{
-            width: "100%",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 16,
-            marginTop: 20,
-          }}>
+          <div
+            style={{
+              width: "100%",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 16,
+              marginTop: 20,
+            }}
+          >
             <label
               style={{
                 display: "inline-flex",
@@ -375,7 +449,20 @@ function Index() {
               />
             </label>
 
-            <Link to="/capture" className="lh-sweep" style={{ ...cta, marginTop: 10, width: "100%", maxWidth: 280, textAlign: "center", justifyContent: "center", padding: "14px 0", fontSize: 18 }}>
+            <Link
+              to="/capture"
+              className="lh-sweep"
+              style={{
+                ...cta,
+                marginTop: 10,
+                width: "100%",
+                maxWidth: 280,
+                textAlign: "center",
+                justifyContent: "center",
+                padding: "14px 0",
+                fontSize: 18,
+              }}
+            >
               开始 · 煮一锅人生 <span style={{ fontSize: 16 }}>→</span>
             </Link>
 
@@ -406,12 +493,39 @@ function Index() {
       <Seal text="人生之味" style={{ position: "absolute", top: 64, right: 84 }} />
 
       {/* 顶部标题簇 */}
-      <div style={{ position: "absolute", top: 74, left: 0, right: 0, textAlign: "center", animation: "lhFade .6s ease both" }}>
-        <div style={{ fontSize: 13, letterSpacing: ".55em", color: "#9a6b3a" }}>A I 　·　 L I F E　H O T P O T</div>
-        <div style={{ fontFamily: serif, fontWeight: 900, fontSize: 64, letterSpacing: ".16em", color: "#2c2418", marginTop: 12 }}>
+      <div
+        style={{
+          position: "absolute",
+          top: 74,
+          left: 0,
+          right: 0,
+          textAlign: "center",
+          animation: "lhFade .6s ease both",
+        }}
+      >
+        <div style={{ fontSize: 13, letterSpacing: ".55em", color: "#9a6b3a" }}>
+          A I · L I F E H O T P O T
+        </div>
+        <div
+          style={{
+            fontFamily: serif,
+            fontWeight: 900,
+            fontSize: 64,
+            letterSpacing: ".16em",
+            color: "#2c2418",
+            marginTop: 12,
+          }}
+        >
           人 生 火 锅
         </div>
-        <div style={{ width: 96, height: 2, margin: "16px auto 0", background: "linear-gradient(90deg,transparent,#b4382b,transparent)" }} />
+        <div
+          style={{
+            width: 96,
+            height: 2,
+            margin: "16px auto 0",
+            background: "linear-gradient(90deg,transparent,#b4382b,transparent)",
+          }}
+        />
       </div>
 
       {/* 锅后淡暖光晕(取代字符水印,只做焦点,不压字) */}
@@ -424,13 +538,23 @@ function Index() {
           width: 340,
           height: 340,
           borderRadius: "50%",
-          background: "radial-gradient(circle at 50% 29.6%, rgba(95,143,122,.12), rgba(180,56,43,.05) 52%, rgba(180,56,43,0) 72%)",
+          background:
+            "radial-gradient(circle at 50% 29.6%, rgba(95,143,122,.12), rgba(180,56,43,.05) 52%, rgba(180,56,43,0) 72%)",
           pointerEvents: "none",
         }}
       />
 
       {/* 居中鸳鸯锅 */}
-      <div style={{ position: "absolute", left: 640, top: 296, transform: "translate(-50%,-50%)", width: 188, height: 188 }}>
+      <div
+        style={{
+          position: "absolute",
+          left: 640,
+          top: 296,
+          transform: "translate(-50%,-50%)",
+          width: 188,
+          height: 188,
+        }}
+      >
         <Steam />
         <div
           style={{
